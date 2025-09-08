@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>快递单号管理</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+Myanmar:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --primary: #3f51b5;
+      --primary-light: #5c6bc0;
+      --primary-dark: #303f9f;
+      --accent: #ff4081;
+      --light: #f8fafc;
+      --dark: #1a237e;
+      --success: #4caf50;
+      --error: #f44336;
+      --gray: #78909c;
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      --transition: all 0.3s ease;
+    }
+
+    body {
+      font-family: 'Noto Sans SC', 'Noto Sans Myanmar', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+      color: var(--dark);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 0;
+      position: relative;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* 语言切换器 */
+    .language-switcher {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 50px;
+      padding: 8px 15px;
+      box-shadow: var(--shadow);
+      z-index: 100;
+      display: flex;
+      gap: 10px;
+    }
+
+    .lang-btn {
+      background: none;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: var(--transition);
+      font-weight: 500;
+    }
+
+    .lang-btn.active {
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+      color: white;
+    }
+
+    /* 导航样式 */
+    nav {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 50px;
+      max-width: 500px;
+      margin: 30px auto;
+      padding: 10px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(5px);
+    }
+
+    .nav-list {
+      display: flex;
+      justify-content: space-around;
+      list-style: none;
+    }
+
+    .nav-item {
+      position: relative;
+      flex: 1;
+      text-align: center;
+    }
+
+    .nav-link {
+      display: block;
+      padding: 12px 20px;
+      text-decoration: none;
+      color: var(--dark);
+      font-weight: 500;
+      border-radius: 30px;
+      transition: var(--transition);
+    }
+
+    .nav-link.active, .nav-link:hover {
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+      color: white;
+    }
+
+    .nav-link i {
+      margin-right: 8px;
+    }
+
+    /* 页面容器 */
+    .page-container {
+      display: none;
+      animation: fadeIn 0.5s ease forwards;
+      opacity: 0;
+    }
+
+    .page-container.active {
+      display: block;
+      opacity: 1;
+    }
+
+    .page {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 40px;
+      box-shadow: var(--shadow);
+      transition: transform 0.3s ease;
+    }
+
+    .page:hover {
+      transform: translateY(-5px);
+    }
+
+    h2 {
+      font-size: 1.8rem;
+      margin-bottom: 25px;
+      color: var(--primary);
+      text-align: center;
+      font-weight: 600;
+      position: relative;
+      padding-bottom: 15px;
+    }
+
+    h2:after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      border-radius: 2px;
+    }
+
+    /* 表单元素样式 */
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 500;
+      color: var(--primary-dark);
+      font-size: 1.05rem;
+      display: flex;
+      align-items: center;
+    }
+
+    label i {
+      margin-right: 8px;
+      color: var(--primary-light);
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid #e8eaf6;
+      border-radius: 12px;
+      font-size: 1rem;
+      transition: var(--transition);
+      background: #f8fafc;
+      color: var(--dark);
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.2);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 150px;
+      font-family: monospace;
+    }
+
+    /* 按钮样式 */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(63, 81, 181, 0.3);
+    }
+
+    .btn:hover {
+      background: linear-gradient(90deg, var(--primary-dark), var(--primary));
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(63, 81, 181, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn i {
+      margin-right: 10px;
+    }
+
+    /* 记录样式 */
+    .record {
+      background: var(--light);
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 15px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+      transition: var(--transition);
+      border-left: 4px solid var(--primary);
+    }
+
+    .record:hover {
+      transform: translateX(5px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .record strong {
+      color: var(--primary);
+      font-weight: 600;
+      display: inline-block;
+      min-width: 90px;
+    }
+
+    /* 搜索页面样式 */
+    #searchResults {
+      margin-top: 30px;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 30px;
+      color: #777;
+      font-style: italic;
+    }
+
+    /* 最近搜索记录 */
+    .recent-searches {
+      margin-top: 30px;
+      background: #f5f7ff;
+      border-radius: 15px;
+      padding: 20px;
+    }
+
+    .recent-title {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 1.2rem;
+    }
+
+    .recent-title i {
+      margin-right: 10px;
+      color: var(--accent);
+    }
+
+    .search-tag {
+      display: inline-block;
+      background: white;
+      border: 1px solid var(--primary-light);
+      border-radius: 20px;
+      padding: 8px 16px;
+      margin: 0 8px 8px 0;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .search-tag:hover {
+      background: var(--primary);
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    .search-tag i {
+      margin-left: 5px;
+      font-size: 0.8rem;
+      opacity: 0.7;
+    }
+
+    /* 动画效果 */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes success {
+      0% { background: linear-gradient(90deg, var(--primary), var(--primary-light)); }
+      50% { background: linear-gradient(90deg, var(--success), #66bb6a); }
+      100% { background: linear-gradient(90deg, var(--primary), var(--primary-light)); }
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+      
+      .page {
+        padding: 20px;
+      }
+      
+      h2 {
+        font-size: 1.5rem;
+      }
+      
+      .nav-list {
+        flex-direction: column;
+      }
+      
+      .nav-item {
+        margin-bottom: 5px;
+      }
+      
+      .language-switcher {
+        top: 10px;
+        right: 10px;
+        padding: 6px 12px;
+      }
+    }
+
+    /* 加载动画 */
+    .loader {
+      display: none;
+      width: 40px;
+      height: 40px;
+      margin: 20px auto;
+      border: 4px solid rgba(63, 81, 181, 0.2);
+      border-top: 4px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* 清空按钮 */
+    .clear-btn {
+      background: none;
+      border: none;
+      color: var(--gray);
+      cursor: pointer;
+      font-size: 0.9rem;
+      margin-left: 10px;
+      transition: var(--transition);
+    }
+
+    .clear-btn:hover {
+      color: var(--error);
+    }
+    
+    /* 系统状态指示器 */
+    .status-indicator {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      gap: 20px;
+    }
+    
+    .status-item {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.7);
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      margin-top: 20px; /* New rule for spacing */
+      justify-content: center; /* Center horizontally */
+    }
+    
+    .status-item i {
+      margin-right: 8px;
+      color: var(--primary);
+    }
+    
+    /* 上传计数器 */
+    .counter {
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 8px;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="language-switcher">
+    <button class="lang-btn active" data-lang="cn">中文</button>
+    <button class="lang-btn" data-lang="mm">မြန်မာ</button>
+  </div>
+
+  <div class="container">
+    
+    <nav>
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a href="#" class="nav-link active" data-page="uploadPage">
+            <i class="fas fa-upload"></i> <span data-translate="uploadNav">单号上传</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#" class="nav-link" data-page="searchPage">
+            <i class="fas fa-search"></i> <span data-translate="searchNav">单号查询</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+    
+    <div id="uploadPage" class="page-container active">
+      <div class="page">
+        <h2><span data-translate="uploadTitle">快递单号上传</span></h2>
+        
+        <div class="status-item">
+          <i class="fas fa-box"></i> <span data-translate="totalCount">已存单号</span>: <span id="totalCount">0</span>
+        </div>
+        
+        <div class="form-group">
+          <label for="uploader">
+            <i class="fas fa-location-dot"></i> <span data-translate="uploadLocation">上传地点</span>：
+          </label>
+          <input type="text" id="uploader" placeholder="请输入库地点" required />
+        </div>
+        
+        <div class="form-group">
+          <label for="trackingNumbers">
+            <i class="fas fa-list-ol"></i> <span data-translate="trackingNumbers">快递单号（每行一个）</span>：
+          </label>
+          <textarea id="trackingNumbers" data-translate-placeholder="trackingNumbersPlaceholder" placeholder="例如：
+SF1234567890
+YT9876543210
+ZT1122334455"></textarea>
+        </div>
+        
+        <button id="uploadBtn" class="btn">
+          <i class="fas fa-upload"></i> <span data-translate="uploadBtn">上传快递单号</span>
+        </button>
+      </div>
+    </div>
+    
+    <div id="searchPage" class="page-container">
+      <div class="page">
+        <h2><span data-translate="searchTitle">快递单号查询</span></h2>
+        
+        <div class="form-group">
+          <label for="searchKey">
+            <i class="fas fa-keyboard"></i> <span data-translate="searchLabel">输入至少 4 位数字（结尾匹配）</span>：
+          </label>
+          <input type="text" id="searchKey" data-translate-placeholder="searchPlaceholder" placeholder="例如：7890" />
+        </div>
+        
+        <button id="searchBtn" class="btn">
+          <i class="fas fa-search"></i> <span data-translate="searchBtn">搜索快递单号</span>
+        </button>
+        
+        <div class="loader" id="searchLoader"></div>
+        
+        <div id="searchResults"></div>
+        
+        <div class="recent-searches">
+          <div class="recent-title">
+            <i class="fas fa-history"></i> <span data-translate="recentSearches">最近搜索记录</span>
+            <button class="clear-btn" id="clearHistory"><i class="fas fa-trash-can"></i> <span data-translate="clearHistory">清空记录</span></button>
+          </div>
+          <div id="searchHistory"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // **重要**：请在这里粘贴你的 Google Apps Script Web 应用 URL
+    // 例如: const API_URL = 'https://script.google.com/macros/s/xxxxxxxxxxxxxxxxxxxxxxxxxxxxx/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxxRRbjmE8hJfgVvPlYJHCkOOw9mZvoQZT8Ey-pJ0TOArsWgBDh4RZaLHyNtZU0QDJfCQ/exec';
+
+    // 语言翻译数据
+    const translations = {
+      cn: {
+        totalCount: "已存单号",
+        historyCount: "搜索历史",
+        uploadNav: "单号上传",
+        searchNav: "单号查询",
+        uploadTitle: "快递单号上传",
+        uploadLocation: "上传地点",
+        trackingNumbers: "快递单号（每行一个）",
+        trackingNumbersPlaceholder: "例如：\nSF1234567890\nYT9876543210\nZT1122334455",
+        uploadBtn: "上传快递单号",
+        searchTitle: "快递单号查询",
+        searchLabel: "输入至少 4 位数字（结尾匹配）",
+        searchPlaceholder: "例如：7890",
+        searchBtn: "搜索快递单号",
+        recentSearches: "最近搜索记录",
+        clearHistory: "清空记录",
+        noResults: "没有找到匹配记录",
+        noHistory: "暂无搜索记录",
+        saveSuccess: "上传成功！",
+        saveSuccessWithDuplicates: "上传成功！新上传 {count} 条记录。\n以下单号已由 {uploader} 上传过，未重复上传：{duplicates}",
+        saveDuplicatesOnly: "所有上传的单号已由 {uploader} 上传过，无新记录上传：{duplicates}",
+        fillRequired: "请填写上传地点和快递单号！",
+        minDigits: "请输入至少 4 位数字！",
+        clearConfirm: "确定要清空所有搜索记录吗？",
+        locationRequired: "请填写上传地点！",
+        numbersRequired: "请填写快递单号！",
+        recordNumber: "单号",
+        recordLocation: "地点",
+        recordTime: "上传时间"
+      },
+      mm: {
+        totalCount: "သိမ်းဆည်းထားသော ကုဒ်နံပါတ်များ",
+        historyCount: "ရှာဖွေမှု မှတ်တမ်း",
+        uploadNav: "ကုဒ်နံပါတ် တင်ရန်",
+        searchNav: "ကုဒ်နံပါတ် ရှာဖွေရန်",
+        uploadTitle: "ကုဒ်နံပါတ် တင်ရန်",
+        uploadLocation: "တင်သည့်နေရာ",
+        trackingNumbers: "ကုဒ်နံပါတ်များ (တစ်ကြောင်းတစ်ခု)",
+        trackingNumbersPlaceholder: "ဥပမာ:\nSF1234567890\nYT9876543210\nZT1122334455",
+        uploadBtn: "ကုဒ်နံပါတ် တင်ရန်",
+        searchTitle: "ကုဒ်နံပါတ် ရှာရန်",
+        searchLabel: "အနည်းဆုံး နံပါတ် ၄ လုံးအထက် ထည့်ပါ (နောက်ဆုံးနံပါတ်)",
+        searchPlaceholder: "ဥပမာ: 7890",
+        searchBtn: "ကုဒ်နံပါတ် ရှာဖွေရန်",
+        recentSearches: "လတ်တလော ရှာဖွေမှုများ",
+        clearHistory: "မှတ်တမ်း ရှင်းရန်",
+        noResults: "မှတ်တမ်းမရှိပါ",
+        noHistory: "ရှာဖွေမှု မှတ်တမ်း မရှိပါ",
+        saveSuccess: "အောင်မြင်စွာ တင်ပြီးပါပြီ!",
+        saveSuccessWithDuplicates: "အောင်မြင်စွာ တင်ပြီးပါပြီ! {count} မှတ်တမ်းအသစ် တင်ပြီးပါပြီ။\nအောက်ပါ ကုဒ်နံပါတ်များကို {uploader} မှ ယခင်တင်ပြီးဖြစ်ပါသည် - {duplicates}",
+        saveDuplicatesOnly: "တင်လိုက်သော ကုဒ်နံပါတ်အားလုံးကို {uploader} မှ ယခင်တင်ပြီးဖြစ်ပါသည် - {duplicates}",
+        fillRequired: "တင်သည့်နေရာနှင့် ကုဒ်နံပါတ်များ ထည့်ပါ!",
+        minDigits: "အနည်းဆုံး နံပါတ် ၄ လုံး ထည့်ပါ!",
+        clearConfirm: "ရှာဖွေမှု မှတ်တမ်းအားလုံးကို ရှင်းလိုပါသလား?",
+        locationRequired: "တင်သည့်နေရာ ထည့်ပါ!",
+        numbersRequired: "ကုဒ်နံပါတ်များ ထည့်ပါ!",
+        recordNumber: "နံပါတ်",
+        recordLocation: "နေရာ",
+        recordTime: "တင်ချိန်"
+      }
+    };
+
+    // 当前语言设置（默认为中文）
+    let currentLang = 'cn';
+    
+    // 设置语言
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('preferredLanguage', lang);
+      
+      // 更新语言按钮状态
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+      });
+      
+      // 翻译所有文本
+      translatePage();
+    }
+    
+    // 翻译页面
+    function translatePage() {
+      // 翻译带有 data-translate 属性的元素
+      document.querySelectorAll('[data-translate]').forEach(el => {
+        const key = el.getAttribute('data-translate');
+        if (translations[currentLang][key]) {
+          el.textContent = translations[currentLang][key];
+        }
+      });
+      
+      // 翻译占位符文本
+      document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-translate-placeholder');
+        if (translations[currentLang][key]) {
+          el.placeholder = translations[currentLang][key];
+        }
+      });
+      
+      // 更新搜索历史显示
+      displaySearchHistory();
+    }
+    
+    // 获取翻译文本
+    function t(key, params = {}) {
+      let text = translations[currentLang][key] || translations.cn[key] || key;
+      
+      // 替换参数
+      for (const [param, value] of Object.entries(params)) {
+        text = text.replace(`{${param}}`, value);
+      }
+      
+      return text;
+    }
+
+    // 页面切换功能
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // 更新导航激活状态
+        document.querySelectorAll('.nav-link').forEach(item => {
+          item.classList.remove('active');
+        });
+        this.classList.add('active');
+        
+        // 切换页面
+        const targetPage = this.getAttribute('data-page');
+        document.querySelectorAll('.page-container').forEach(page => {
+          page.classList.remove('active');
+        });
+        document.getElementById(targetPage).classList.add('active');
+        
+        // 如果是查询页面，加载搜索历史
+        if (targetPage === 'searchPage') {
+          displaySearchHistory();
+        }
+        // 如果是上传页面，更新计数器
+        if (targetPage === 'uploadPage') {
+            updateTotalCount();
+        }
+      });
+    });
+
+    // 获取总单号数量
+    async function updateTotalCount() {
+        if (!API_URL) return;
+        try {
+            // 使用 count=true 参数来获取总数，假设你的 Apps Script 后端支持此功能
+            // 如果不支持，可以做一个简单的 GET 请求并统计返回的记录数
+            const response = await fetch(API_URL + '?count=true');
+            const data = await response.json();
+            document.getElementById('totalCount').textContent = data.totalCount;
+        } catch (error) {
+            console.error('Failed to fetch total count:', error);
+        }
+    }
+
+    // 获取搜索历史
+    function getSearchHistory() {
+      const history = localStorage.getItem('searchHistory');
+      return history ? JSON.parse(history) : [];
+    }
+
+    // 保存搜索历史
+    function saveSearchHistory(history) {
+      localStorage.setItem('searchHistory', JSON.stringify(history));
+    }
+
+    // 显示搜索历史
+    function displaySearchHistory() {
+      const history = getSearchHistory();
+      const historyContainer = document.getElementById('searchHistory');
+      historyContainer.innerHTML = '';
+      
+      if (history.length === 0) {
+        historyContainer.innerHTML = `<p style="color:#78909c; text-align:center;">${t('noHistory')}</p>`;
+        return;
+      }
+      
+      history.forEach(item => {
+        const tag = document.createElement('div');
+        tag.className = 'search-tag';
+        tag.innerHTML = `${item.term} <i class="fas fa-clock"></i> ${item.time}`;
+        
+        // 点击历史记录进行搜索
+        tag.addEventListener('click', () => {
+          document.getElementById('searchKey').value = item.term;
+          document.getElementById('searchBtn').click();
+        });
+        
+        historyContainer.appendChild(tag);
+      });
+    }
+
+    // 添加上传功能
+    document.getElementById('uploadBtn').addEventListener('click', function(){
+      const uploader = document.getElementById('uploader').value.trim();
+      const text = document.getElementById('trackingNumbers').value.trim();
+      
+      if (!API_URL) {
+          alert("Please set the API_URL in the JavaScript code.");
+          return;
+      }
+
+      if (!uploader) {
+        alert(t('locationRequired'));
+        return;
+      }
+      
+      if (!text) {
+        alert(t('numbersRequired'));
+        return;
+      }
+      
+      const btn = this;
+      btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('uploadBtn')}`;
+      btn.disabled = true;
+
+      const params = new URLSearchParams({
+        uploader: uploader,
+        trackingNumbers: text
+      });
+
+      fetch(API_URL, {
+        method: 'POST',
+        body: params,
+      })
+      .then(response => response.json())
+      .then(data => {
+        let alertMessage = '';
+        if (data.newRecordsCount > 0) {
+          alertMessage += t('saveSuccessWithDuplicates', {
+            count: data.newRecordsCount,
+            uploader: uploader,
+            duplicates: data.duplicates.join(', ')
+          });
+        }
+        if (data.newRecordsCount === 0 && data.duplicates.length > 0) {
+            alertMessage = t('saveDuplicatesOnly', {
+                uploader: uploader,
+                duplicates: data.duplicates.join(', ')
+            });
+        }
+        
+        if (alertMessage) {
+            alert(alertMessage);
+        } else {
+             alert(t('saveSuccess'));
+        }
+
+        // 清空表单
+        document.getElementById('trackingNumbers').value = '';
+        document.getElementById('uploader').value = '';
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Upload failed. Please try again.');
+      })
+      .finally(() => {
+        btn.innerHTML = `<i class="fas fa-upload"></i> ${t('uploadBtn')}`;
+        btn.disabled = false;
+        updateTotalCount();
+      });
+    });
+
+    // 添加搜索功能
+    document.getElementById('searchBtn').addEventListener('click', function(){
+      const key = document.getElementById('searchKey').value.trim();
+      if (key.length < 4) {
+        alert(t('minDigits'));
+        return;
+      }
+      
+      if (!API_URL) {
+          alert("Please set the API_URL in the JavaScript code.");
+          return;
+      }
+
+      const loader = document.getElementById('searchLoader');
+      const resultsDiv = document.getElementById('searchResults');
+      loader.style.display = 'block';
+      resultsDiv.innerHTML = "";
+      
+      fetch(`${API_URL}?key=${encodeURIComponent(key)}`)
+      .then(response => {
+          if (!response.ok) {
+              throw new Error('Network response was not ok');
+          }
+          return response.json();
+      })
+      .then(matched => {
+        loader.style.display = 'none';
+        
+        if (matched.length === 0) {
+          resultsDiv.innerHTML = `<div class="no-results">${t('noResults')}</div>`;
+        } else {
+          matched.forEach(rec => {
+            const div = document.createElement('div');
+            div.className = 'record';
+            div.innerHTML = `
+              <div><strong>${t('recordNumber')}：</strong>${rec.tracking_number}</div>
+              <div><strong>${t('recordLocation')}：</strong>${rec.uploader}</div>
+              <div><strong>${t('recordTime')}：</strong>${rec.upload_time}</div>
+            `;
+            resultsDiv.appendChild(div);
+          });
+        }
+        
+        // 保存搜索历史
+        const history = getSearchHistory();
+        const now = new Date().toLocaleTimeString();
+        
+        // 避免重复记录
+        const existingIndex = history.findIndex(item => item.term === key);
+        if (existingIndex !== -1) {
+          history.splice(existingIndex, 1);
+        }
+        
+        // 添加新记录到最前面
+        history.unshift({
+          term: key,
+          time: now
+        });
+        
+        // 只保留最近5条记录
+        if (history.length > 5) {
+          history.pop();
+        }
+        
+        saveSearchHistory(history);
+        displaySearchHistory();
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        loader.style.display = 'none';
+        resultsDiv.innerHTML = `<div class="no-results">An error occurred while searching.</div>`;
+      });
+    });
+
+    // 清空搜索历史
+    document.getElementById('clearHistory').addEventListener('click', function() {
+      if (confirm(t('clearConfirm'))) {
+        saveSearchHistory([]);
+        displaySearchHistory();
+      }
+    });
+
+    // 语言切换事件
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        setLanguage(this.getAttribute('data-lang'));
+      });
+    });
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      // 加载用户首选语言
+      const savedLang = localStorage.getItem('preferredLanguage') || 'cn';
+      setLanguage(savedLang);
+      
+      displaySearchHistory();
+      updateTotalCount();
+    });
+  </script>
+</body>
+</html>
