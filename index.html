@@ -291,9 +291,9 @@
           document.getElementById('uploader').value = '';
 
       } catch (error) {
-        // 捕获权限错误或网络错误
+        // 捕获权限错误或网络错误（如最近出现的 Permission denied）
         console.error('Firebase 操作失败:', error);
-        alert(`上传失败！\n\n【错误原因】：${error.message}\n\n请确认：\n1. 数据库 "Rules" (规则) 是否已设置为 .read 和 .write 均为 'true'？\n2. 浏览器缓存是否清除？`);
+        alert(`上传失败！\n\n【错误原因】：${error.message}\n\n请**立即执行**最后一步：\n检查 Firebase Realtime Database 的 "Rules" (规则) 是否已设置为 .read 和 .write 均为 'true'？`);
       
       } finally {
         uploadBtn.disabled = false;
