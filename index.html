@@ -157,7 +157,7 @@
       <label for="trackingNumbers">快递单号（每行一个）：</label>
       <textarea id="trackingNumbers" placeholder="例如：1234567890"></textarea>
     </div>
-    <button id="uploadBtn">上传快递单号</button>
+    <button id="uploadBtn">上传快递快递单号</button>
 
     <hr>
 
@@ -171,26 +171,30 @@
   </div>
 
   <script type="module">
-    // 1. 导入 Firebase SDK (路径已修复)
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
-    import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+    // ======================================================================
+    // 1. 导入 Firebase SDK (使用你截图中的 12.4.0 版本)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+    // ** 关键修复：导入 database，而不是 analytics **
+    import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
     
-    // 2. 你的 Firebase 项目配置信息 (已添加 databaseURL)
+    // 2. 你的【新】Firebase 项目配置信息
     const firebaseConfig = {
-      apiKey: "AIzaSyBsMYYyjo6ZIW-WomQoQobdnZ7icZreyyM",
-      authDomain: "lashio-bbq.firebaseapp.com",
-      projectId: "lashio-bbq",
-      storageBucket: "lashio-bbq.firebasestorage.app",
-      messagingSenderId: "253658588705",
-      appId: "1:253658588705:web:e4df39e7764b27f7d52560",
-      measurementId: "G-D1JLX43XHP",
-      databaseURL: "https://lashio-bbq-default-rtdb.firebaseio.com" 
+      apiKey: "AIzaSyCBW4wP4ROOIcUp-p2EdKvu2c0_w5m0LW8",
+      authDomain: "hujunda-8d205.firebaseapp.com",
+      projectId: "hujunda-8d205",
+      storageBucket: "hujunda-8d205.firebasestorage.app",
+      messagingSenderId: "956966084475",
+      appId: "1:956966084475:web:16dc41636c2aa2483667de",
+      measurementId: "G-6NFT87MWVV",
+      // ** 关键修复：添加你新项目的数据库 URL **
+      databaseURL: "https://hujunda-8d205-default-rtdb.firebaseio.com"
     };
     
     // 3. 初始化 Firebase 和 Realtime Database
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const recordsRef = ref(db, 'trackingRecords'); // 数据库中的根路径
+    // ======================================================================
 
     /**
      * 辅助函数：从 Firebase 获取所有记录并进行结尾匹配
@@ -218,7 +222,7 @@
         return results;
     }
     
-    // --- 上传功能实现 ---
+    // --- 上传功能实现 (包含增强的错误提示) ---
     document.getElementById('uploadBtn').addEventListener('click', async function(){
       const uploader = document.getElementById('uploader').value.trim();
       const text = document.getElementById('trackingNumbers').value.trim();
@@ -237,7 +241,6 @@
           return;
       }
 
-      // 禁用按钮，显示加载状态
       uploadBtn.disabled = true;
       uploadBtn.textContent = '正在上传...';
 
@@ -247,9 +250,7 @@
 
       try {
           // 1. 一次性读取现有所有数据，用于去重检查
-          console.log("正在尝试读取 (get)...");
           const snapshot = await get(recordsRef);
-          console.log("读取 (get) 成功!");
 
           const existingRecords = snapshot.exists() ? Object.values(snapshot.val()) : [];
           const existingNumbers = existingRecords.map(rec => rec.number);
@@ -267,9 +268,7 @@
                 uploadTime: now
               };
               
-              console.log(`正在尝试写入 (push) ${number}...`);
               await push(recordsRef, newRecord);
-              console.log(`写入 (push) ${number} 成功`);
               newCount++;
           }
 
@@ -293,18 +292,10 @@
           document.getElementById('uploader').value = '';
 
       } catch (error) {
-        // =============================================
-        // *** 增强的错误提示 ***
-        // 如果卡住，是因为权限问题，这次会执行到这里
-        // =============================================
         console.error('Firebase 操作失败:', error);
-        alert(`上传失败！Firebase 拒绝了请求。\n\n错误信息: ${error.message}\n\n【请立即检查】：\n1. Firebase Realtime Database "Rules" (规则) 是否已设置为 .read 和 .write 均为 'true'？\n2. 你是否点击了 "Publish" (发布) 按钮？`);
+        alert(`上传失败！Firebase 拒绝了请求。\n\n错误信息: ${error.message}\n\n【请立即检查】：\n1. 你是否在【新项目 hujunda-8d205】中创建了 Realtime Database 实例？\n2. 你的 "Rules" (规则) 是否已设置为 .read 和 .write 均为 'true'？\n3. 你是否点击了 "Publish" (发布) 按钮？`);
       
       } finally {
-        // =============================================
-        // 无论成功还是失败，都会重置按钮
-        // =============================================
-        console.log("Finally 块执行，重置按钮。");
         uploadBtn.disabled = false;
         uploadBtn.textContent = '上传快递单号';
       }
@@ -344,7 +335,7 @@
 
       } catch (error) {
         console.error('查询失败:', error);
-        alert(`查询失败！\n错误信息: ${error.message}\n\n请检查 Firebase Realtime Database "Rules" (规则) 是否已设置为 .read: 'true'。`);
+        alert(`查询失败！\n错误信息: ${error.message}\n\n请检查 Firebase "Rules" (规则) 是否已设置为 .read: 'true'。`);
       } finally {
         searchBtn.disabled = false;
         searchBtn.textContent = '搜索';
