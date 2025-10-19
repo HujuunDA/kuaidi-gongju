@@ -171,8 +171,7 @@
   </div>
 
   <script type="module">
-    // ======================================================================
-    // 1. 导入 Firebase SDK 所需的模块 (已修复路径)
+    // 1. 导入 Firebase SDK (路径已修复)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
     import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
     
@@ -185,7 +184,6 @@
       messagingSenderId: "253658588705",
       appId: "1:253658588705:web:e4df39e7764b27f7d52560",
       measurementId: "G-D1JLX43XHP",
-      // 关键修复：根据控制台警告添加 Realtime Database URL
       databaseURL: "https://lashio-bbq-default-rtdb.firebaseio.com" 
     };
     
@@ -193,7 +191,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const recordsRef = ref(db, 'trackingRecords'); // 数据库中的根路径
-    // ======================================================================
 
     /**
      * 辅助函数：从 Firebase 获取所有记录并进行结尾匹配
@@ -210,14 +207,12 @@
             for (const keyId in allRecords) {
                 if (Object.prototype.hasOwnProperty.call(allRecords, keyId)) {
                     const record = allRecords[keyId];
-                    // 客户端实现“结尾匹配”
                     if (record.number && record.number.endsWith(key)) {
                         results.push(record);
                     }
                 }
             }
         }
-        // 按照上传时间倒序排列 (新的记录在前)
         results.sort((a, b) => new Date(b.uploadTime) - new Date(a.uploadTime)); 
         
         return results;
@@ -234,9 +229,7 @@
         return;
       }
       
-      // 预处理单号：按行分割，去除前后空格，过滤空行
       let numbers = text.split('\n').map(s => s.trim()).filter(s => s);
-      // 去除同一批内的重复
       numbers = [...new Set(numbers)];
       
       if (numbers.length === 0) {
@@ -254,7 +247,10 @@
 
       try {
           // 1. 一次性读取现有所有数据，用于去重检查
+          console.log("正在尝试读取 (get)...");
           const snapshot = await get(recordsRef);
+          console.log("读取 (get) 成功!");
+
           const existingRecords = snapshot.exists() ? Object.values(snapshot.val()) : [];
           const existingNumbers = existingRecords.map(rec => rec.number);
 
@@ -265,15 +261,15 @@
                   continue;
               }
 
-              // 构造新记录对象
               const newRecord = {
                 number: number,
                 uploader: uploader,
                 uploadTime: now
               };
-
-              // 使用 push() 方法上传数据
+              
+              console.log(`正在尝试写入 (push) ${number}...`);
               await push(recordsRef, newRecord);
+              console.log(`写入 (push) ${number} 成功`);
               newCount++;
           }
 
@@ -293,22 +289,28 @@
               alert(message);
           }
           
-          // 清空输入框
           document.getElementById('trackingNumbers').value = '';
           document.getElementById('uploader').value = '';
 
       } catch (error) {
-        console.error('上传失败:', error);
-        // 如果是权限错误，在这里会有提示
-        alert('数据上传到 Firebase 时失败。请检查 Firebase 规则是否允许写入（.write: true）。');
+        // =============================================
+        // *** 增强的错误提示 ***
+        // 如果卡住，是因为权限问题，这次会执行到这里
+        // =============================================
+        console.error('Firebase 操作失败:', error);
+        alert(`上传失败！Firebase 拒绝了请求。\n\n错误信息: ${error.message}\n\n【请立即检查】：\n1. Firebase Realtime Database "Rules" (规则) 是否已设置为 .read 和 .write 均为 'true'？\n2. 你是否点击了 "Publish" (发布) 按钮？`);
+      
       } finally {
-        // 恢复按钮状态
+        // =============================================
+        // 无论成功还是失败，都会重置按钮
+        // =============================================
+        console.log("Finally 块执行，重置按钮。");
         uploadBtn.disabled = false;
         uploadBtn.textContent = '上传快递单号';
       }
     });
 
-    // --- 搜索功能实现 ---
+    // --- 搜索功能实现 (保持不变) ---
     document.getElementById('searchBtn').addEventListener('click', async function(){
       const key = document.getElementById('searchKey').value.trim();
       const resultsDiv = document.getElementById('searchResults');
@@ -325,13 +327,11 @@
       searchBtn.textContent = '正在搜索...';
 
       try {
-        // 调用搜索函数
         const matched = await searchRecordsBySuffix(key);
         
         if (matched.length === 0) {
           resultsDiv.innerHTML = "<p>没有找到匹配记录。</p>";
         } else {
-          // 渲染结果
           matched.forEach(rec => {
             const div = document.createElement('div');
             div.className = 'record';
@@ -344,9 +344,8 @@
 
       } catch (error) {
         console.error('查询失败:', error);
-        resultsDiv.innerHTML = "<p>数据查询失败。请检查网络或 Firebase 配置。</p>";
+        alert(`查询失败！\n错误信息: ${error.message}\n\n请检查 Firebase Realtime Database "Rules" (规则) 是否已设置为 .read: 'true'。`);
       } finally {
-        // 恢复按钮状态
         searchBtn.disabled = false;
         searchBtn.textContent = '搜索';
       }
