@@ -57,8 +57,6 @@
 
   <script>
     // ======================================================================
-    // 注意：这里不再需要 import 语句，因为库已通过 <script> 标签全局加载。
-    
     // 1. 你的【新】Firebase 项目配置信息 (hujunda-8d205)
     const firebaseConfig = {
       apiKey: "AIzaSyCBW4wP4ROOIcUp-p2EdKvu2c0_w5m0LW8", 
@@ -76,7 +74,6 @@
     // 使用全局变量 firebase.initializeApp 和 firebase.database()
     const app = firebase.initializeApp(firebaseConfig);
     const db = firebase.database(app);
-    // 使用 db.ref() 替代 getDatabase 和 ref
     const recordsRef = db.ref('trackingRecords'); // 数据库中的根路径
     // ======================================================================
 
@@ -86,7 +83,7 @@
     async function searchRecordsBySuffix(key) {
         const results = [];
         try {
-            // 使用 recordsRef.once('value') 替代 get(recordsRef)
+            // 使用 recordsRef.once('value')
             const snapshot = await recordsRef.once('value');
 
             if (snapshot.exists()) {
@@ -136,7 +133,6 @@
 
       try {
           // 1. 读取现有数据
-          // 使用 recordsRef.once('value') 替代 get(recordsRef)
           const snapshot = await recordsRef.once('value');
 
           const existingRecords = snapshot.exists() ? Object.values(snapshot.val()) : [];
@@ -155,7 +151,7 @@
                 uploadTime: now
               };
               
-              // 使用 recordsRef.push() 替代 push(recordsRef, newRecord)
+              // 使用 recordsRef.push()
               await recordsRef.push(newRecord); 
               newCount++;
           }
@@ -181,7 +177,7 @@
 
       } catch (error) {
         console.error('Firebase 操作失败:', error);
-        alert(`上传失败！\n\n【错误原因】：${error.message}\n\n请确认：\n1. 数据库 "Rules" (规则) 是否已设置为 .read 和 .write 均为 'true'？\n2. 强制清除 iPhone/Safari 缓存。`);
+        alert(`上传失败！\n\n【错误原因】：${error.message}\n\n请检查：\n1. 数据库 "Rules" (规则) 是否为 .write: 'true'？\n2. 浏览器网络连接是否正常？`);
       
       } finally {
         uploadBtn.disabled = false;
