@@ -5,44 +5,159 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>快递单号上传与查询 - 多设备同步</title>
   <style>
-    /* ... 样式部分保持不变 ... */
-    * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 20px; background: linear-gradient(135deg, #e3f2fd, #bbdefb); color: #1a237e; line-height: 1.6; }
-    .container { max-width: 700px; margin: 30px auto; background: #ffffff; border-radius: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); padding: 30px; transition: transform 0.3s ease; }
-    .container:hover { transform: translateY(-5px); }
-    h2 { font-size: 1.8em; margin-bottom: 20px; color: #3f51b5; text-align: center; font-weight: 600; letter-spacing: 1px; }
-    label { display: block; margin-bottom: 8px; font-weight: 500; color: #3f51b5; font-size: 1.1em; }
-    input, textarea { width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #e8eaf6; border-radius: 8px; font-size: 1em; transition: border-color 0.3s ease, box-shadow 0.3s ease; background: #f8fafc; }
-    input:focus, textarea:focus { outline: none; border-color: #3f51b5; box-shadow: 0 0 8px rgba(63, 81, 181, 0.3); }
-    textarea { resize: vertical; min-height: 120px; }
-    button { width: 100%; padding: 12px; background: linear-gradient(90deg, #3f51b5, #5c6bc0); color: #fff; border: none; border-radius: 8px; font-size: 1.1em; font-weight: 500; cursor: pointer; transition: background 0.3s ease, transform 0.2s ease, opacity 0.2s ease; }
-    button:hover { background: linear-gradient(90deg, #5c6bc0, #3f51b5); transform: scale(1.02); }
-    button:active { transform: scale(0.98); }
-    button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-    hr { border: none; border-top: 1px solid #e8eaf6; margin: 30px 0; }
-    .record { background: #f8fafc; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); transition: transform 0.3s ease; }
-    .record:hover { transform: translateX(5px); }
-    .record strong { color: #3f51b5; font-weight: 600; }
-    #searchResults p { text-align: center; color: #d32f2f; font-weight: 500; }
-    @media (max-width: 600px) { .container { padding: 20px; margin: 20px; } h2 { font-size: 1.5em; } button { font-size: 1em; } }
+    /* CSS 样式部分 */
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+      color: #1a237e;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 30px auto;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      padding: 30px;
+      transition: transform 0.3s ease;
+    }
+
+    .container:hover {
+      transform: translateY(-5px);
+    }
+
+    h2 {
+      font-size: 1.8em;
+      margin-bottom: 20px;
+      color: #3f51b5;
+      text-align: center;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #3f51b5;
+      font-size: 1.1em;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 20px;
+      border: 2px solid #e8eaf6;
+      border-radius: 8px;
+      font-size: 1em;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      background: #f8fafc;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #3f51b5;
+      box-shadow: 0 0 8px rgba(63, 81, 181, 0.3);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(90deg, #3f51b5, #5c6bc0);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1em;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    button:hover {
+      background: linear-gradient(90deg, #5c6bc0, #3f51b5);
+      transform: scale(1.02);
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #e8eaf6;
+      margin: 30px 0;
+    }
+
+    .record {
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+    }
+
+    .record:hover {
+      transform: translateX(5px);
+    }
+
+    .record strong {
+      color: #3f51b5;
+      font-weight: 600;
+    }
+
+    #searchResults p {
+      text-align: center;
+      color: #d32f2f;
+      font-weight: 500;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px;
+        margin: 20px;
+      }
+
+      h2 {
+        font-size: 1.5em;
+      }
+
+      button {
+        font-size: 1em;
+      }
+    }
   </style>
-  
-  <script src="https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js"></script>
-  
 </head>
 <body>
   <div class="container">
     <h2>快递单号上传</h2>
     <div>
-      <label for="uploader">姓名：</label>
+      <label for="uploader">上传人：</label>
       <input type="text" id="uploader" placeholder="请输入您的姓名" required />
     </div>
     <div>
       <label for="trackingNumbers">快递单号（每行一个）：</label>
       <textarea id="trackingNumbers" placeholder="例如：1234567890"></textarea>
     </div>
-    <button id="uploadBtn">上传单号</button>
+    <button id="uploadBtn">上传快递单号</button>
 
     <hr>
 
@@ -55,9 +170,13 @@
     <div id="searchResults"></div>
   </div>
 
-  <script>
+  <script type="module">
     // ======================================================================
-    // 1. 你的【新】Firebase 项目配置信息 (hujunda-8d205)
+    // 1. 导入 Firebase SDK (使用你提供的版本 12.4.0)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+    import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
+    
+    // 2. 你的【新】Firebase 项目配置信息 (hujunda-8d205)
     const firebaseConfig = {
       apiKey: "AIzaSyCBW4wP4ROOIcUp-p2EdKvu2c0_w5m0LW8", 
       authDomain: "hujunda-8d205.firebaseapp.com",
@@ -70,11 +189,10 @@
       databaseURL: "https://hujunda-8d205-default-rtdb.firebaseio.com" 
     };
     
-    // 2. 初始化 Firebase 和 Realtime Database
-    // 使用全局变量 firebase.initializeApp 和 firebase.database()
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.database(app);
-    const recordsRef = db.ref('trackingRecords'); // 数据库中的根路径
+    // 3. 初始化 Firebase 和 Realtime Database
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const recordsRef = ref(db, 'trackingRecords'); // 数据库中的根路径
     // ======================================================================
 
     /**
@@ -83,9 +201,7 @@
     async function searchRecordsBySuffix(key) {
         const results = [];
         try {
-            // 使用 recordsRef.once('value')
-            const snapshot = await recordsRef.once('value');
-
+            const snapshot = await get(recordsRef);
             if (snapshot.exists()) {
                 const allRecords = snapshot.val();
                 
@@ -133,7 +249,7 @@
 
       try {
           // 1. 读取现有数据
-          const snapshot = await recordsRef.once('value');
+          const snapshot = await get(recordsRef);
 
           const existingRecords = snapshot.exists() ? Object.values(snapshot.val()) : [];
           const existingNumbers = existingRecords.map(rec => rec.number);
@@ -151,8 +267,7 @@
                 uploadTime: now
               };
               
-              // 使用 recordsRef.push()
-              await recordsRef.push(newRecord); 
+              await push(recordsRef, newRecord); // 异步写入数据库
               newCount++;
           }
 
@@ -176,8 +291,9 @@
           document.getElementById('uploader').value = '';
 
       } catch (error) {
+        // 捕获权限错误或网络错误（如最近出现的 Permission denied）
         console.error('Firebase 操作失败:', error);
-        alert(`上传失败！\n\n【错误原因】：${error.message}\n\n请检查：\n1. 数据库 "Rules" (规则) 是否为 .write: 'true'？\n2. 浏览器网络连接是否正常？`);
+        alert(`上传失败！\n\n【错误原因】：${error.message}\n\n请**立即执行**最后一步：\n检查 Firebase Realtime Database 的 "Rules" (规则) 是否已设置为 .read 和 .write 均为 'true'？`);
       
       } finally {
         uploadBtn.disabled = false;
@@ -227,4 +343,3 @@
   </script>
 </body>
 </html>
-
