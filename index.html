@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>快递单号管理与同步系统 (查9风格)</title>
+  <title>快递单号管理与同步系统 (查9风格 - 本地版)</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+Myanmar:wght@400;700&display=swap" rel="stylesheet">
   
@@ -587,41 +587,48 @@ ZT1122334455"></textarea>
     </div>
   </div>
 
-  <script type="module">
+  <script>
     // ======================================================================
-    // 1. 导入 Firebase SDK (使用文件 "单号查询可同步系统.html" 中提供的 v12.4.0 版本)
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-    import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
-    
-    // 2. 您的 Firebase 项目配置信息 (来自文件 "单号查询可同步系统.html")
-    const firebaseConfig = {
-      apiKey: "AIzaSyCBW4wP4ROOIcUp-p2EdKvu2c0_w5m0LW8", //
-      authDomain: "hujunda-8d205.firebaseapp.com", //
-      projectId: "hujunda-8d205", //
-      storageBucket: "hujunda-8d205.firebasestorage.app", //
-      messagingSenderId: "956966084475", //
-      appId: "1:956966084475:web:16dc41636c2aa2483667de", //
-      measurementId: "G-6NFT87MWVV", //
-      databaseURL: "https://hujunda-8d205-default-rtdb.firebaseio.com" //
-    };
-    
-    // 3. 初始化 Firebase 和 Realtime Database
-    let app, db, recordsRef;
-    try {
-        app = initializeApp(firebaseConfig);
-        db = getDatabase(app);
-        recordsRef = ref(db, 'trackingRecords'); // 数据库中的根路径
-        console.log("Firebase 初始化成功。");
-    } catch (e) {
-        console.error("Firebase 初始化失败，请检查配置:", e);
-        alert("系统初始化失败，请检查控制台输出的错误信息。");
+    // **本地存储 (Local Storage) 替代 Firebase 数据库**
+    // 
+    // 警告：此方案数据仅保存在您当前使用的浏览器中，无法跨设备或与他人同步！
+    // 
+    const STORAGE_KEY = 'trackingRecordsData';
+
+    /**
+     * 从本地存储获取所有记录。
+     * @returns {Array<Object>} 所有记录的数组。
+     */
+    function getLocalRecords() {
+        try {
+            const json = localStorage.getItem(STORAGE_KEY);
+            // 确保返回的是数组，以防本地存储损坏
+            const records = json ? JSON.parse(json) : [];
+            return Array.isArray(records) ? records : [];
+        } catch (e) {
+            console.error("读取本地记录失败:", e);
+            return [];
+        }
+    }
+
+    /**
+     * 将记录数组保存到本地存储。
+     * @param {Array<Object>} records 要保存的记录数组。
+     */
+    function saveLocalRecords(records) {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+        } catch (e) {
+            console.error("保存本地记录失败:", e);
+            alert("本地存储空间可能已满，无法保存新的记录！");
+        }
     }
     // ======================================================================
 
-    // 查9的语言翻译数据 (已添加缺失的翻译)
+    // 查9的语言翻译数据
     const translations = {
       cn: {
-        totalCount: "已存单号",
+        totalCount: "已存单号 (本地)",
         historyCount: "搜索历史",
         currentLang: "", // 新增
         uploadNav: "单号上传",
@@ -651,14 +658,14 @@ ZT1122334455"></textarea>
         recordNumber: "单号",
         recordLocation: "地点",
         recordTime: "上传时间",
-        exportBtn: "导出 Excel", // <--- 新增
-        exporting: "正在导出...", // <--- 新增
-        exportSuccess: "导出成功！", // <--- 新增
-        exportError: "导出失败！错误: ", // <--- 新增
-        saveError: "上传失败！\n\n【错误原因】：{error}\n\n请检查 Firebase Realtime Database 的 'Rules' (规则) 是否已设置为公开读写。" 
+        exportBtn: "导出 Excel", 
+        exporting: "正在导出...", 
+        exportSuccess: "导出成功！", 
+        exportError: "导出失败！错误: ", 
+        saveError: "上传失败！\n\n【错误原因】：{error}\n\n请检查浏览器设置或本地存储空间是否已满。" 
       },
       mm: {
-        totalCount: "သိမ်းထားသော ကုဒ်နံပါတ်များ",
+        totalCount: "သိမ်းထားသော ကုဒ်နံပါတ်များ (ဒေသဆိုင်ရာ)",
         historyCount: "ရှာဖွေမှု မှတ်တမ်း",
         currentLang: "", // 新增
         uploadNav: "ကုဒ် တင်ရန်",
@@ -688,11 +695,11 @@ ZT1122334455"></textarea>
         recordNumber: "နံပါတ်",
         recordLocation: "နေရာ",
         recordTime: "အချိန်",
-        exportBtn: "Excel ထုတ်ရန်", // <--- 新增
-        exporting: "ထုတ်ယူနေသည်...", // <--- 新增
-        exportSuccess: "ထုတ်ယူမှု အောင်မြင်ပါပြီ!", // <--- 新增
-        exportError: "ထုတ်ယူမှု မအောင်မြင်ပါ! အမှား:", // <--- 新增
-        saveError: "တင်ရန် မအောင်မြင်ပါ!\n\n【အမှားအယွင်း】: {error}\n\nFirebase Realtime Database ၏ 'Rules' (စည်းကမ်းချက်များ) ကို လူသိရှင်ကြား ဖတ်ရှုခြင်းနှင့် ရေးသားခြင်းအတွက် သတ်မှတ်ထားခြင်း ရှိ၊ မရှိ စစ်ဆေးပါ။"
+        exportBtn: "Excel ထုတ်ရန်", 
+        exporting: "ထုတ်ယူနေသည်...", 
+        exportSuccess: "ထုတ်ယူမှု အောင်မြင်ပါပြီ!", 
+        exportError: "ထုတ်ယူမှု မအောင်မြင်ပါ! အမှား:", 
+        saveError: "တင်ရန် မအောင်မြင်ပါ!\n\n【အမှားအယွင်း】: {error}\n\nဘရောက်ဆာ ဆက်တင်များ သို့မဟုတ် ဒေသဆိုင်ရာ သိုလှောင်မှု နေရာ ပြည့်နေခြင်း ရှိ၊ မရှိ စစ်ဆေးပါ။"
       }
     };
 
@@ -762,11 +769,12 @@ ZT1122334455"></textarea>
       displaySearchHistory();
     }
 
-    // 搜索历史的本地存储 (查9风格)
+    // 搜索历史的本地存储
     function getSearchHistory() {
       try {
         const history = localStorage.getItem('searchHistory');
-        return history ? JSON.parse(history) : [];
+        const records = history ? JSON.parse(history) : [];
+        return Array.isArray(records) ? records : [];
       } catch (e) {
         return [];
       }
@@ -774,7 +782,6 @@ ZT1122334455"></textarea>
 
     function saveSearchHistory(history) {
       localStorage.setItem('searchHistory', JSON.stringify(history));
-      // **已移除对 updateCounters() 的调用，因为它已被移除**
     }
 
     function displaySearchHistory() {
@@ -802,7 +809,7 @@ ZT1122334455"></textarea>
       });
     }
 
-    // 清空搜索历史 (查9交互)
+    // 清空搜索历史
     document.getElementById('clearHistory').addEventListener('click', function() {
       if (confirm(t('clearConfirm'))) {
         saveSearchHistory([]);
@@ -811,65 +818,45 @@ ZT1122334455"></textarea>
     });
 
     /**
-     * 辅助函数：从 Firebase 获取所有记录并进行结尾匹配
+     * 辅助函数：从本地存储获取所有记录并进行结尾匹配
+     * (模拟 Firebase 查询的异步行为)
+     * @param {string} key 搜索关键词
      */
     async function searchRecordsBySuffix(key) { 
-        const results = [];
-        if (!recordsRef) return results;
+        // 模拟网络延迟
+        await new Promise(resolve => setTimeout(resolve, 500)); 
+        
+        const allRecords = getLocalRecords();
+        const results = allRecords.filter(record => 
+            // 确保 number 存在且是字符串，再进行 endsWith 匹配
+            record.number && String(record.number).endsWith(key)
+        );
 
-        try {
-            const snapshot = await get(recordsRef); //
-            if (snapshot.exists()) {
-                const allRecords = snapshot.val();
-                
-                for (const keyId in allRecords) {
-                    if (Object.prototype.hasOwnProperty.call(allRecords, keyId)) {
-                        const record = allRecords[keyId];
-                        if (record.number && record.number.endsWith(key)) { //
-                            results.push(record);
-                        }
-                    }
-                }
-            }
-            // 按时间倒序排序
-            results.sort((a, b) => {
-                // 将上传时间字符串转换为可比较的格式，以确保排序准确
-                const dateA = new Date(a.uploadTime);
-                const dateB = new Date(b.uploadTime);
-                return dateB.getTime() - dateA.getTime();
-            });
-        } catch (error) {
-             console.error('Firebase 查询失败:', error);
-             throw error;
-        }
+        // 按时间倒序排序
+        results.sort((a, b) => {
+            const dateA = new Date(a.uploadTime);
+            const dateB = new Date(b.uploadTime);
+            return dateB.getTime() - dateA.getTime();
+        });
+        
         return results;
     }
     
-    // 获取总记录数 (从 Firebase 读取，用于更新计数器)
+    // 获取总记录数 (从本地存储读取)
     async function getTotalCount() {
-        if (!recordsRef) return 0;
-        try {
-            const snapshot = await get(recordsRef);
-            if (snapshot.exists()) {
-                return Object.keys(snapshot.val()).length;
-            }
-        } catch (error) {
-            console.error("无法获取总数:", error);
-        }
-        return 0;
+        // 模拟异步操作的延迟
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return getLocalRecords().length;
     }
 
-    // **修改：移除对 historyCount 的更新**
+    // 更新计数器
     async function updateCounters() {
       document.getElementById('totalCount').textContent = await getTotalCount();
-      // document.getElementById('historyCount').textContent = getSearchHistory().length; 
     }
 
 
-    // --- 核心上传功能 (使用 Firebase 实时同步) ---
+    // --- 核心上传功能 (改用本地存储) ---
     document.getElementById('uploadBtn').addEventListener('click', async function(){
-      if (!recordsRef) return alert("Firebase 未初始化成功，请检查错误信息。");
-
       const uploader = document.getElementById('uploader').value.trim();
       const text = document.getElementById('trackingNumbers').value.trim();
       const uploadBtn = this;
@@ -900,12 +887,12 @@ ZT1122334455"></textarea>
       const now = new Date().toLocaleString();
 
       try {
-          // 1. 读取现有数据
-          const snapshot = await get(recordsRef); //
-          const existingRecords = snapshot.exists() ? Object.values(snapshot.val()) : [];
-          const existingNumbers = existingRecords.map(rec => rec.number); //
+          // 1. 读取现有数据 (本地存储)
+          const existingRecords = getLocalRecords();
+          const existingNumbers = existingRecords.map(rec => rec.number); 
 
-          // 2. 遍历并上传新记录
+          // 2. 遍历并添加新记录
+          const newRecords = [];
           for (const number of numbers) {
               if (existingNumbers.includes(number)) {
                   duplicates.push(number);
@@ -918,11 +905,16 @@ ZT1122334455"></textarea>
                 uploadTime: now
               };
               
-              await push(recordsRef, newRecord); // 异步写入数据库，实现多设备同步
+              newRecords.push(newRecord); 
               newCount++;
           }
+          
+          // 3. 批量保存到本地存储
+          if (newRecords.length > 0) {
+              saveLocalRecords([...existingRecords, ...newRecords]);
+          }
 
-          // 3. 反馈结果
+          // 4. 反馈结果
           if (newCount > 0) {
             // 查9的动画效果
             uploadBtn.innerHTML = `<i class="fas fa-check"></i> ${t('saveSuccess')}`;
@@ -950,13 +942,12 @@ ZT1122334455"></textarea>
           }
           
           document.getElementById('trackingNumbers').value = '';
-          // document.getElementById('uploader').value = ''; // 保持上传人不变，方便连续操作
           updateCounters();
 
       } catch (error) {
-        // 捕获权限错误或网络错误
-        console.error('Firebase 操作失败:', error);
-        alert(t('saveError', { error: error.message })); // 使用翻译后的错误信息
+        // 捕获本地存储错误
+        console.error('本地存储操作失败:', error);
+        alert(t('saveError', { error: error.message })); 
       
       } finally {
         uploadBtn.disabled = false;
@@ -966,10 +957,8 @@ ZT1122334455"></textarea>
       }
     });
 
-    // --- 核心搜索功能 (从 Firebase 查询) ---
+    // --- 核心搜索功能 (改用本地存储) ---
     document.getElementById('searchBtn').addEventListener('click', async function(){
-      if (!recordsRef) return alert("Firebase 未初始化成功，无法查询。");
-
       const key = document.getElementById('searchKey').value.trim();
       const resultsDiv = document.getElementById('searchResults');
       const searchBtn = this;
@@ -987,7 +976,7 @@ ZT1122334455"></textarea>
       loader.style.display = 'block'; // 显示加载动画
 
       try {
-        const matched = await searchRecordsBySuffix(key); // 调用 Firebase 查询函数
+        const matched = await searchRecordsBySuffix(key); // 调用本地存储查询函数
         
         loader.style.display = 'none';
 
@@ -1006,7 +995,7 @@ ZT1122334455"></textarea>
           });
         }
         
-        // 保存搜索历史 (功能保留)
+        // 保存搜索历史
         const history = getSearchHistory();
         const now = new Date().toLocaleTimeString();
         const existingIndex = history.findIndex(item => item.term === key);
@@ -1030,25 +1019,21 @@ ZT1122334455"></textarea>
       }
     });
 
-    // --- 核心导出功能 (导出所有记录到 CSV) ---
+    // --- 核心导出功能 (改用本地存储) ---
     async function exportToCSV() {
-        if (!recordsRef) return alert("Firebase 未初始化成功，无法导出。");
-
         const exportBtn = document.getElementById('exportExcelBtn');
-        const originalText = exportBtn.innerHTML;
 
         exportBtn.disabled = true;
         exportBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('exporting')}`;
 
         try {
-            const snapshot = await get(recordsRef);
-            if (!snapshot.exists()) {
+            const allRecords = getLocalRecords(); // 从本地存储获取
+            
+            if (allRecords.length === 0) {
                 alert(t('noResults'));
                 return;
             }
 
-            const allRecords = Object.values(snapshot.val());
-            
             // 1. 定义 CSV 表头 (使用当前的翻译)
             const headers = [
                 t('recordNumber'), 
@@ -1058,15 +1043,13 @@ ZT1122334455"></textarea>
             
             // 2. 将数据转换为 CSV 格式
             const csvRows = [];
-            csvRows.push(headers.join(',')); // 加入表头
+            csvRows.push(headers.join(',')); 
             
             allRecords.forEach(record => {
-                // 确保数据中不包含逗号或换行符，如果包含则用双引号包裹
+                // CSV 转义函数
                 const escapeCsv = (str) => {
-                    // 对于 undefined/null 的情况，返回空字符串
                     const s = String(str || ''); 
                     if (s.includes(',') || s.includes('\n') || s.includes('"')) {
-                        // 将内部双引号转义为两个双引号，并用双引号包裹整个字段
                         return `"${s.replace(/"/g, '""')}"`;
                     }
                     return s;
@@ -1082,22 +1065,19 @@ ZT1122334455"></textarea>
 
             // 3. 创建 Blob 并下载
             const csvString = csvRows.join('\n');
-            // 使用 BOM (Byte Order Mark) 确保 Excel/WPS 正确识别 UTF-8 编码的中文/缅甸语
             const BOM = "\uFEFF"; 
             const blob = new Blob([BOM + csvString], { type: 'text/csv;charset=utf-8;' });
             
             const a = document.createElement('a');
             const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
             a.href = URL.createObjectURL(blob);
-            a.download = `${t('totalCount')}_records_${date}.csv`; // 使用翻译和日期作为文件名
+            a.download = `${t('totalCount')}_records_${date}.csv`;
             
-            // 模拟点击下载
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(a.href);
             
-            // 成功反馈
             alert(t('exportSuccess'));
 
         } catch (error) {
@@ -1120,14 +1100,14 @@ ZT1122334455"></textarea>
       displaySearchHistory();
       updateCounters(); // 首次加载时更新单号总数
       
-      // 语言切换事件监听器（确保在 DOM 加载后运行）
+      // 语言切换事件监听器
       document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.addEventListener('click', function() {
           setLanguage(this.getAttribute('data-lang'));
         });
       });
       
-      // **新增: 导出按钮事件监听器**
+      // 导出按钮事件监听器
       document.getElementById('exportExcelBtn').addEventListener('click', exportToCSV);
     });
   </script>
