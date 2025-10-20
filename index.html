@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>快递单号管理系统 </title>
+  <title>快递单号管理与同步系统 (查9风格)</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+Myanmar:wght@400;700&display=swap" rel="stylesheet">
   
@@ -476,7 +476,7 @@
           <label for="uploader">
             <i class="fas fa-location-dot"></i> <span data-translate="uploadLocation">上传地点</span>：
           </label>
-          <input type="text" id="uploader" placeholder="请输入您的姓名或地点" required />
+          <input type="text" id="uploader" data-translate-placeholder="uploaderPlaceholder" placeholder="请输入您的姓名或地点" required />
         </div>
         
         <div class="form-group">
@@ -529,7 +529,7 @@ ZT1122334455"></textarea>
     // ======================================================================
     // 1. 导入 Firebase SDK (使用文件 "单号查询可同步系统.html" 中提供的 v12.4.0 版本)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-    import { getDatabase, ref, push, get, set } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
+    import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
     
     // 2. 您的 Firebase 项目配置信息 (来自文件 "单号查询可同步系统.html")
     const firebaseConfig = {
@@ -556,7 +556,7 @@ ZT1122334455"></textarea>
     }
     // ======================================================================
 
-    // 查9的语言翻译数据 (已添加 saveError 翻译)
+    // 查9的语言翻译数据 (已添加缺失的翻译)
     const translations = {
       cn: {
         totalCount: "已存单号",
@@ -565,6 +565,7 @@ ZT1122334455"></textarea>
         searchNav: "单号查询",
         uploadTitle: "快递单号上传",
         uploadLocation: "上传地点",
+        uploaderPlaceholder: "请输入您的姓名或地点", // 新增
         trackingNumbers: "快递单号（每行一个）",
         trackingNumbersPlaceholder: "例如：\nSF1234567890\nYT9876543210\nZT1122334455",
         uploadBtn: "上传快递单号",
@@ -587,39 +588,39 @@ ZT1122334455"></textarea>
         recordNumber: "单号",
         recordLocation: "地点",
         recordTime: "上传时间",
-        saveError: "上传失败！\n\n【错误原因】：{error}\n\n请检查 Firebase Realtime Database 的 'Rules' (规则) 是否已设置为公开读写。"
+        saveError: "上传失败！\n\n【错误原因】：{error}\n\n请检查 Firebase Realtime Database 的 'Rules' (规则) 是否已设置为公开读写。" // 包含错误提示
       },
       mm: {
-        // ... (省略缅甸语翻译，保持原文件内容) ...
-        totalCount: "သိမ်းထားသော ကုဒ်များ",
+        totalCount: "သိမ်းထားသော ကုဒ်နံပါတ်များ",
         historyCount: "ရှာဖွေမှု မှတ်တမ်း",
         uploadNav: "ကုဒ် တင်ရန်",
         searchNav: "ကုဒ် ရှာဖွေရန်",
-        uploadTitle: "ကုဒ်နံပါတ် တင်ရန်",
-        uploadLocation: "ကုဒ်တင်သည့်နေရာ",
+        uploadTitle: "ကုဒ် တင်ရန်",
+        uploadLocation: "တင်သည့်နေရာ",
+        uploaderPlaceholder: "သင့်အမည် သို့မဟုတ် နေရာ ထည့်ပါ", // 新增翻译
         trackingNumbers: "ကုဒ်နံပါတ်များ (တစ်ကြောင်းတစ်ခု)",
         trackingNumbersPlaceholder: "ဥပမာ:\nSF1234567890\nYT9876543210\nZT1122334455",
         uploadBtn: "ကုဒ် တင်ရန်",
         searchTitle: "ကုဒ် ရှာရန်",
         searchLabel: "အနည်းဆုံး နံပါတ် ၄ လုံးအထက် ထည့်ပါ (နောက်ဆုံးနံပါတ်)",
-        searchPlaceholder: "ဥပမာ: 7890",
+        searchPlaceholder: "ဥပမာ: ****7890",
         searchBtn: "ကုဒ် ရှာဖွေရန်",
         recentSearches: "လတ်တလော ရှာဖွေမှုများ",
         clearHistory: "မှတ်တမ်း ရှင်းရန်",
         noResults: "မှတ်တမ်းမရှိပါ",
-        noHistory: "မှတ်တမ်း မရှိပါ",
+        noHistory: "ရှာဖွေမှု မှတ်တမ်း မရှိပါ",
         saveSuccess: "အောင်မြင်ပါပြီ!",
-        saveSuccessWithDuplicates: "အောင်ပါပြီ! {count} မှတ်တမ်းအသစ် တင်ပြီးပါပြီ။\nအောက်ပါ ကုဒ်နံပါတ်များကို {uploader} မှ ယခင်တင်ပြီးဖြစ်ပါသည် - {duplicates}",
+        saveSuccessWithDuplicates: "အောင်မြင်ပါပြီ! {count} မှတ်တမ်းအသစ် တင်ပြီး။\nအောက်ပါ ကုဒ်နံပါတ်များကို {uploader} မှ ယခင်တင်ပြီးဖြစ်ပါသည် - {duplicates}",
         saveDuplicatesOnly: "တင်လိုက်သော ကုဒ်နံပါတ်အားလုံးကို {uploader} မှ ယခင်တင်ပြီးဖြစ်ပါသည် - {duplicates}",
-        fillRequired: "ကုဒ်နံပါတ်များ ထည့်ပါ!",
+        fillRequired: "နေရာနှင့် ကုဒ်နံပါတ်များ ထည့်ပါ!",
         minDigits: "အနည်းဆုံး နံပါတ် ၄ လုံး ထည့်ပါ!",
         clearConfirm: "ရှာဖွေမှု မှတ်တမ်းအားလုံးကို ရှင်းလိုပါသလား?",
         locationRequired: "တင်သည့်နေရာ ထည့်ပါ!",
         numbersRequired: "ကုဒ်နံပါတ်များ ထည့်ပါ!",
         recordNumber: "နံပါတ်",
         recordLocation: "နေရာ",
-        recordTime: "တင်ချိန်",
-        saveError: "မအောင်မြင်ပါ!\n\n【အမှားအယွင်း】: {error}\n\nFirebase Realtime Database ၏ 'Rules' (စည်းကမ်းချက်များ) ကို လူသိရှင်ကြား ဖတ်ရှုခြင်းနှင့် ရေးသားခြင်းအတွက် သတ်မှတ်ထားခြင်း ရှိ၊ မရှိ စစ်ဆေးပါ။"
+        recordTime: "အချိန်",
+        saveError: "တင်ရန် မအောင်မြင်ပါ!\n\n【အမှားအယွင်း】: {error}\n\nFirebase Realtime Database ၏ 'Rules' (စည်းကမ်းချက်များ) ကို လူသိရှင်ကြား ဖတ်ရှုခြင်းနှင့် ရေးသားခြင်းအတွက် သတ်မှတ်ထားခြင်း ရှိ၊ မရှိ စစ်ဆေးပါ။"
       }
     };
 
@@ -673,6 +674,7 @@ ZT1122334455"></textarea>
       });
       document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
         const key = el.getAttribute('data-translate-placeholder');
+        // 确保占位符也翻译
         if (translations[currentLang][key]) {
           el.placeholder = translations[currentLang][key];
         }
@@ -725,12 +727,10 @@ ZT1122334455"></textarea>
       }
     });
 
-    // -----------------------------------------------------
-
     /**
-     * 辅助函数：从 Firebase 获取所有记录并进行结尾匹配 (来自文件 "单号查询可同步系统.html")
+     * 辅助函数：从 Firebase 获取所有记录并进行结尾匹配
      */
-    async function searchRecordsBySuffix(key) { //
+    async function searchRecordsBySuffix(key) { 
         const results = [];
         if (!recordsRef) return results;
 
@@ -749,7 +749,12 @@ ZT1122334455"></textarea>
                 }
             }
             // 按时间倒序排序
-            results.sort((a, b) => new Date(b.uploadTime) - new Date(a.uploadTime)); //
+            results.sort((a, b) => {
+                // 将上传时间字符串转换为可比较的格式，以确保排序准确
+                const dateA = new Date(a.uploadTime);
+                const dateB = new Date(b.uploadTime);
+                return dateB.getTime() - dateA.getTime();
+            });
         } catch (error) {
              console.error('Firebase 查询失败:', error);
              throw error;
@@ -961,6 +966,3 @@ ZT1122334455"></textarea>
   </script>
 </body>
 </html>
-
-
-
