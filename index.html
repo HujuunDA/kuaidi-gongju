@@ -47,16 +47,8 @@
 
     /* 语言切换器 */
     .language-switcher {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 50px;
-      padding: 8px 15px;
-      box-shadow: var(--shadow);
-      z-index: 100;
-      display: flex;
-      gap: 10px;
+      /* **修改：隐藏原有的绝对定位切换器** */
+      display: none; 
     }
 
     .lang-btn {
@@ -359,12 +351,6 @@
       .nav-item {
         margin-bottom: 5px;
       }
-      
-      .language-switcher {
-        top: 10px;
-        right: 10px;
-        padding: 6px 12px;
-      }
     }
 
     /* 加载动画 */
@@ -422,7 +408,44 @@
       color: var(--primary);
     }
     
-    /* 上传计数器 */
+    /* 语言切换框样式 (新增/修改) */
+    .lang-switch-box {
+        cursor: pointer;
+        /* 使用不同的背景色以区分 */
+        background: linear-gradient(90deg, #f0f4f8, #e3f2fd); 
+        padding: 6px 12px; 
+        transition: var(--transition);
+        border-radius: 20px; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .lang-switch-box:hover {
+        box-shadow: 0 4px 10px rgba(63, 81, 181, 0.2);
+    }
+    
+    .lang-switch-box .lang-btn {
+        padding: 3px 6px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--gray);
+        background: none;
+        border: none;
+        transition: var(--transition);
+        line-height: 1; 
+        cursor: pointer;
+    }
+
+    .lang-switch-box .lang-btn.active {
+      color: var(--primary); /* 当前激活的语言用主色显示 */
+    }
+    
+    .lang-switch-box .lang-btn:not(.active) {
+      color: var(--gray);
+    }
+    .lang-switch-box .lang-btn:not(.active):hover {
+        color: var(--primary-light);
+    }
+    
+    /* 上传计数器 (未修改) */
     .counter {
       background: var(--primary);
       color: white;
@@ -435,21 +458,60 @@
       margin-left: 8px;
       font-size: 0.8rem;
     }
+    
+    /* **新增: 导出按钮容器样式** */
+    .export-btn-container {
+        display: flex;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.7);
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .export-btn {
+        background: none;
+        border: none;
+        color: var(--primary);
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        padding: 0;
+        margin-left: 5px; /* 与图标分隔 */
+    }
+
+    .export-btn:hover {
+        color: var(--primary-dark);
+        transform: scale(1.05);
+    }
+    .export-btn i {
+        margin-right: 5px;
+        color: var(--success); /* 导出按钮使用绿色 */
+    }
   </style>
 </head>
 <body>
-  <div class="language-switcher">
-    <button class="lang-btn active" data-lang="cn">中文</button>
-    <button class="lang-btn" data-lang="mm">မြန်မာ</button>
-  </div>
-
   <div class="container">
     <div class="status-indicator">
       <div class="status-item">
         <i class="fas fa-box"></i> <span data-translate="totalCount">已存单号</span>: <span id="totalCount">0</span>
       </div>
-      <div class="status-item">
-        <i class="fas fa-clock-rotate-left"></i> <span data-translate="historyCount">搜索历史</span>: <span id="historyCount">0</span>
+      
+      <div class="export-btn-container">
+        <button class="export-btn" id="exportExcelBtn">
+            <i class="fas fa-file-excel"></i> <span data-translate="exportBtn">导出 Excel</span>
+        </button>
+      </div>
+      
+      <div class="status-item lang-switch-box">
+        <i class="fas fa-language"></i> <span data-translate="currentLang"></span>: 
+        <button class="lang-btn active" data-lang="cn">中文</button>
+        <span style="color: #ccc;">(</span>
+        <button class="lang-btn" data-lang="mm">မြန်မာ</button>
+        <span style="color: #ccc;">)</span>
       </div>
     </div>
     
@@ -561,11 +623,12 @@ ZT1122334455"></textarea>
       cn: {
         totalCount: "已存单号",
         historyCount: "搜索历史",
+        currentLang: "", // 新增
         uploadNav: "单号上传",
         searchNav: "单号查询",
         uploadTitle: "快递单号上传",
         uploadLocation: "上传地点",
-        uploaderPlaceholder: "请输入您的姓名或地点", // 新增
+        uploaderPlaceholder: "请输入您的姓名或地点", 
         trackingNumbers: "快递单号（每行一个）",
         trackingNumbersPlaceholder: "例如：\nSF1234567890\nYT9876543210\nZT1122334455",
         uploadBtn: "上传快递单号",
@@ -588,16 +651,21 @@ ZT1122334455"></textarea>
         recordNumber: "单号",
         recordLocation: "地点",
         recordTime: "上传时间",
-        saveError: "上传失败！\n\n【错误原因】：{error}\n\n请检查 Firebase Realtime Database 的 'Rules' (规则) 是否已设置为公开读写。" // 包含错误提示
+        exportBtn: "导出 Excel", // <--- 新增
+        exporting: "正在导出...", // <--- 新增
+        exportSuccess: "导出成功！", // <--- 新增
+        exportError: "导出失败！错误: ", // <--- 新增
+        saveError: "上传失败！\n\n【错误原因】：{error}\n\n请检查 Firebase Realtime Database 的 'Rules' (规则) 是否已设置为公开读写。" 
       },
       mm: {
         totalCount: "သိမ်းထားသော ကုဒ်နံပါတ်များ",
         historyCount: "ရှာဖွေမှု မှတ်တမ်း",
+        currentLang: "", // 新增
         uploadNav: "ကုဒ် တင်ရန်",
         searchNav: "ကုဒ် ရှာဖွေရန်",
         uploadTitle: "ကုဒ် တင်ရန်",
         uploadLocation: "တင်သည့်နေရာ",
-        uploaderPlaceholder: "သင့်အမည် သို့မဟုတ် နေရာ ထည့်ပါ", // 新增翻译
+        uploaderPlaceholder: "သင့်အမည် သို့မဟုတ် နေရာ ထည့်ပါ", 
         trackingNumbers: "ကုဒ်နံပါတ်များ (တစ်ကြောင်းတစ်ခု)",
         trackingNumbersPlaceholder: "ဥပမာ:\nSF1234567890\nYT9876543210\nZT1122334455",
         uploadBtn: "ကုဒ် တင်ရန်",
@@ -620,6 +688,10 @@ ZT1122334455"></textarea>
         recordNumber: "နံပါတ်",
         recordLocation: "နေရာ",
         recordTime: "အချိန်",
+        exportBtn: "Excel ထုတ်ရန်", // <--- 新增
+        exporting: "ထုတ်ယူနေသည်...", // <--- 新增
+        exportSuccess: "ထုတ်ယူမှု အောင်မြင်ပါပြီ!", // <--- 新增
+        exportError: "ထုတ်ယူမှု မအောင်မြင်ပါ! အမှား:", // <--- 新增
         saveError: "တင်ရန် မအောင်မြင်ပါ!\n\n【အမှားအယွင်း】: {error}\n\nFirebase Realtime Database ၏ 'Rules' (စည်းကမ်းချက်များ) ကို လူသိရှင်ကြား ဖတ်ရှုခြင်းနှင့် ရေးသားခြင်းအတွက် သတ်မှတ်ထားခြင်း ရှိ၊ မရှိ စစ်ဆေးပါ။"
       }
     };
@@ -659,6 +731,7 @@ ZT1122334455"></textarea>
     function setLanguage(lang) {
       currentLang = lang;
       localStorage.setItem('preferredLanguage', lang);
+      // 遍历所有语言按钮并设置激活状态
       document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
       });
@@ -679,6 +752,13 @@ ZT1122334455"></textarea>
           el.placeholder = translations[currentLang][key];
         }
       });
+      
+      // 更新导出按钮文本
+      const exportBtnSpan = document.getElementById('exportExcelBtn')?.querySelector('span');
+      if (exportBtnSpan) {
+          exportBtnSpan.textContent = t('exportBtn');
+      }
+      
       displaySearchHistory();
     }
 
@@ -694,13 +774,16 @@ ZT1122334455"></textarea>
 
     function saveSearchHistory(history) {
       localStorage.setItem('searchHistory', JSON.stringify(history));
-      updateCounters();
+      // **已移除对 updateCounters() 的调用，因为它已被移除**
     }
 
     function displaySearchHistory() {
       const history = getSearchHistory();
       const historyContainer = document.getElementById('searchHistory');
       historyContainer.innerHTML = '';
+      
+      // 更新清空按钮的文本
+      document.getElementById('clearHistory').querySelector('span').textContent = t('clearHistory');
       
       if (history.length === 0) {
         historyContainer.innerHTML = `<p style="color:#78909c; text-align:center;">${t('noHistory')}</p>`;
@@ -776,10 +859,10 @@ ZT1122334455"></textarea>
         return 0;
     }
 
-    // 更新计数器
+    // **修改：移除对 historyCount 的更新**
     async function updateCounters() {
       document.getElementById('totalCount').textContent = await getTotalCount();
-      document.getElementById('historyCount').textContent = getSearchHistory().length;
+      // document.getElementById('historyCount').textContent = getSearchHistory().length; 
     }
 
 
@@ -923,7 +1006,7 @@ ZT1122334455"></textarea>
           });
         }
         
-        // 保存搜索历史 (查9交互)
+        // 保存搜索历史 (功能保留)
         const history = getSearchHistory();
         const now = new Date().toLocaleTimeString();
         const existingIndex = history.findIndex(item => item.term === key);
@@ -947,6 +1030,87 @@ ZT1122334455"></textarea>
       }
     });
 
+    // --- 核心导出功能 (导出所有记录到 CSV) ---
+    async function exportToCSV() {
+        if (!recordsRef) return alert("Firebase 未初始化成功，无法导出。");
+
+        const exportBtn = document.getElementById('exportExcelBtn');
+        const originalText = exportBtn.innerHTML;
+
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('exporting')}`;
+
+        try {
+            const snapshot = await get(recordsRef);
+            if (!snapshot.exists()) {
+                alert(t('noResults'));
+                return;
+            }
+
+            const allRecords = Object.values(snapshot.val());
+            
+            // 1. 定义 CSV 表头 (使用当前的翻译)
+            const headers = [
+                t('recordNumber'), 
+                t('recordLocation'), 
+                t('recordTime')
+            ];
+            
+            // 2. 将数据转换为 CSV 格式
+            const csvRows = [];
+            csvRows.push(headers.join(',')); // 加入表头
+            
+            allRecords.forEach(record => {
+                // 确保数据中不包含逗号或换行符，如果包含则用双引号包裹
+                const escapeCsv = (str) => {
+                    // 对于 undefined/null 的情况，返回空字符串
+                    const s = String(str || ''); 
+                    if (s.includes(',') || s.includes('\n') || s.includes('"')) {
+                        // 将内部双引号转义为两个双引号，并用双引号包裹整个字段
+                        return `"${s.replace(/"/g, '""')}"`;
+                    }
+                    return s;
+                };
+                
+                const row = [
+                    escapeCsv(record.number),
+                    escapeCsv(record.uploader),
+                    escapeCsv(record.uploadTime)
+                ];
+                csvRows.push(row.join(','));
+            });
+
+            // 3. 创建 Blob 并下载
+            const csvString = csvRows.join('\n');
+            // 使用 BOM (Byte Order Mark) 确保 Excel/WPS 正确识别 UTF-8 编码的中文/缅甸语
+            const BOM = "\uFEFF"; 
+            const blob = new Blob([BOM + csvString], { type: 'text/csv;charset=utf-8;' });
+            
+            const a = document.createElement('a');
+            const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            a.href = URL.createObjectURL(blob);
+            a.download = `${t('totalCount')}_records_${date}.csv`; // 使用翻译和日期作为文件名
+            
+            // 模拟点击下载
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+            
+            // 成功反馈
+            alert(t('exportSuccess'));
+
+        } catch (error) {
+            console.error('导出失败:', error);
+            alert(t('exportError') + error.message);
+        } finally {
+            exportBtn.disabled = false;
+            // 恢复按钮的原始文本 (需要翻译更新)
+            exportBtn.innerHTML = `<i class="fas fa-file-excel"></i> <span data-translate="exportBtn">${t('exportBtn')}</span>`;
+        }
+    }
+
+
     // 初始化
     document.addEventListener('DOMContentLoaded', () => {
       // 加载用户首选语言
@@ -962,6 +1126,9 @@ ZT1122334455"></textarea>
           setLanguage(this.getAttribute('data-lang'));
         });
       });
+      
+      // **新增: 导出按钮事件监听器**
+      document.getElementById('exportExcelBtn').addEventListener('click', exportToCSV);
     });
   </script>
 </body>
