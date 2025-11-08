@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>快递单号管理 (Supabase 云同步)</title>
+  <title>快递单号管理 (公开版)</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+Myanmar:wght@400;700&display=swap" rel="stylesheet">
   <style>
+    /* 样式代码保持不变，与您之前的版本一致 */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -326,12 +327,6 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-
     @keyframes success {
       0% { background: linear-gradient(90deg, var(--primary), var(--primary-light)); }
       50% { background: linear-gradient(90deg, var(--success), #66bb6a); }
@@ -421,40 +416,9 @@
       margin-right: 8px;
       color: var(--primary);
     }
-    
-    /* 认证界面样式 - 关键修复 */
-    #authPage {
-        background: white;
-        border-radius: 20px;
-        padding: 40px;
-        margin: 50px auto;
-        max-width: 400px;
-        box-shadow: var(--shadow);
-        text-align: center;
-    }
-
-    #authPage button {
-        margin-top: 10px;
-    }
-    
-    .user-info {
-        background: #e8eaf6;
-        padding: 15px;
-        border-radius: 12px;
-        margin-top: 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .user-info span {
-        font-weight: 500;
-        color: var(--primary-dark);
-        word-break: break-all;
-    }
   </style>
 </head>
-<body>
+<body onload="initApp()">
   <div class="language-switcher">
     <button class="lang-btn active" data-lang="cn">中文</button>
     <button class="lang-btn" data-lang="mm">မြန်မာ</button>
@@ -463,9 +427,6 @@
   <div class="container">
     <div class="status-indicator">
       <div class="status-item">
-        <i class="fas fa-user-circle"></i> <span data-translate="userStatus">状态</span>: <span id="authStatus">未登录</span>
-      </div>
-      <div class="status-item">
         <i class="fas fa-box"></i> <span data-translate="totalCount">已存单号</span>: <span id="totalCount">0</span>
       </div>
       <div class="status-item">
@@ -473,40 +434,7 @@
       </div>
     </div>
     
-    <div id="authPage" class="page-container active">
-        <h2><span data-translate="authTitle">用户认证</span></h2>
-        
-        <div class="form-group">
-          <label for="userEmail">
-            <i class="fas fa-envelope"></i> <span data-translate="emailLabel">邮箱</span>：
-          </label>
-          <input type="email" id="userEmail" placeholder="请输入邮箱" required />
-        </div>
-        
-        <div class="form-group">
-          <label for="userPassword">
-            <i class="fas fa-lock"></i> <span data-translate="passwordLabel">密码</span>：
-          </label>
-          <input type="password" id="userPassword" placeholder="请输入密码" required />
-        </div>
-        
-        <button id="signInBtn" class="btn">
-          <i class="fas fa-sign-in-alt"></i> <span data-translate="signInBtn">登录</span>
-        </button>
-        
-        <button id="signUpBtn" class="btn" style="background: var(--gray); margin-top: 10px;">
-          <i class="fas fa-user-plus"></i> <span data-translate="signUpBtn">注册</span>
-        </button>
-
-        <div class="user-info" id="userInfoDisplay" style="display:none;">
-            <span><i class="fas fa-user"></i> <span id="userEmailDisplay"></span></span>
-            <button id="signOutBtn" class="btn" style="width: auto; padding: 8px 15px; background: var(--error);">
-                <i class="fas fa-sign-out-alt"></i> <span data-translate="signOutBtn">退出</span>
-            </button>
-        </div>
-    </div>
-    
-    <nav id="mainNav" style="display: none;">
+    <nav id="mainNav">
       <ul class="nav-list">
         <li class="nav-item">
           <a href="#" class="nav-link active" data-page="uploadPage">
@@ -521,7 +449,7 @@
       </ul>
     </nav>
     
-    <div id="uploadPage" class="page-container">
+    <div id="uploadPage" class="page-container active">
       <div class="page">
         <h2><span data-translate="uploadTitle">快递单号上传</span></h2>
         
@@ -580,15 +508,14 @@ ZT1122334455"></textarea>
 
   <script>
     // -----------------------------------------------------------
-    // SUPABASE 配置 (已植入您的真实配置)
+    // SUPABASE 配置 (重要：无需认证)
     // -----------------------------------------------------------
     const SUPABASE_URL = 'https://mjirgvgnglrffwavenysf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qaXJndmdnbHJmZndhdmVueXNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1Nzc3MjEsImV4cCI6MjA3ODE1MzcyMX0.PNkKgv333cAhAClj3AtBlcPQkm1qp5RKm-KwhWc91L0';
     
-    // 关键修复：创建 Supabase 客户端实例
+    // 直接创建 Supabase 客户端实例，不涉及 auth
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    let currentUser = null;
-
+    
     // -----------------------------------------------------------
     // 语言和翻译数据 (保持不变)
     // -----------------------------------------------------------
@@ -612,8 +539,8 @@ ZT1122334455"></textarea>
         noResults: "没有找到匹配记录",
         noHistory: "暂无搜索记录",
         saveSuccess: "上传成功！",
-        saveSuccessWithDuplicates: "上传成功！新上传 {count} 条记录。\n以下单号已由 {uploader} 上传过，未重复上传：{duplicates}",
-        saveDuplicatesOnly: "所有上传的单号已由 {uploader} 上传过，无新记录上传：{duplicates}",
+        saveSuccessWithDuplicates: "上传成功！新上传 {count} 条记录。\n以下单号已上传过，未重复上传：{duplicates}",
+        saveDuplicatesOnly: "所有上传的单号已上传过，无新记录上传：{duplicates}",
         fillRequired: "请填写上传地点和快递单号！",
         minDigits: "请输入至少 4 位数字！",
         clearConfirm: "确定要清空所有搜索记录吗？",
@@ -622,17 +549,8 @@ ZT1122334455"></textarea>
         recordNumber: "单号",
         recordLocation: "地点",
         recordTime: "上传时间",
-        authTitle: "用户认证", 
-        emailLabel: "邮箱",      
-        passwordLabel: "密码",    
-        signInBtn: "登录",       
-        signUpBtn: "注册",       
-        signOutBtn: "退出",      
-        userStatus: "状态",      
-        statusLoggedIn: "已登录", 
-        statusLoggedOut: "未登录" 
       },
-      mm: {
+      mm: { /* ... (缅文翻译保持不变) ... */
         totalCount: "သိမ်းဆည်းထားသော ကုဒ်နံပါတ်များ",
         historyCount: "ရှာဖွေမှု မှတ်တမ်း",
         uploadNav: "ကုဒ်နံပါတ် တင်ရန်",
@@ -651,8 +569,8 @@ ZT1122334455"></textarea>
         noResults: "မှတ်တမ်းမရှိပါ",
         noHistory: "ရှာဖွေမှု မှတ်တမ်း မရှိပါ",
         saveSuccess: "အောင်မြင်စွာ တင်ပြီးပါပြီ!",
-        saveSuccessWithDuplicates: "အောင်မြင်စွာ တင်ပြီးပါပြီ! {count} မှတ်တမ်းအသစ် တင်ပြီးပါပြီ။\nအောက်ပါ ကုဒ်နံပါတ်များကို {uploader} မှ ယခင်တင်ပြီးဖြစ်ပါသည် - {duplicates}",
-        saveDuplicatesOnly: "တင်လိုက်သော ကုဒ်နံပါတ်အားလုံးကို {uploader} မှ ယခင်တင်ပြီးဖြစ်ပါသည် - {duplicates}",
+        saveSuccessWithDuplicates: "အောင်မြင်စွာ တင်ပြီးပါပြီ! {count} မှတ်တမ်းအသစ် တင်ပြီးပါပြီ။\nအောက်ပါ ကုဒ်နံပါတ်များကို ယခင်တင်ပြီးဖြစ်ပါသည် - {duplicates}",
+        saveDuplicatesOnly: "တင်လိုက်သော ကုဒ်နံပါတ်အားလုံးကို ယခင်တင်ပြီးဖြစ်ပါသည် - {duplicates}",
         fillRequired: "တင်သည့်နေရာနှင့် ကုဒ်နံပါတ်များ ထည့်ပါ!",
         minDigits: "အနည်းဆုံး နံပါတ် ၄ လုံး ထည့်ပါ!",
         clearConfirm: "ရှာဖွေမှု မှတ်တမ်းအားလုံးကို ရှင်းလိုပါသလား?",
@@ -663,278 +581,103 @@ ZT1122334455"></textarea>
         recordTime: "တင်ချိန်"
       }
     };
-
+    
     // 当前语言设置（默认为中文）
     let currentLang = 'cn';
     
-    // 设置语言
     function setLanguage(lang) {
       currentLang = lang;
       localStorage.setItem('preferredLanguage', lang);
-      
-      // 更新语言按钮状态
       document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
       });
-      
-      // 翻译所有文本
       translatePage();
     }
     
-    // 翻译页面
     function translatePage() {
-      // 翻译带有 data-translate 属性的元素
       document.querySelectorAll('[data-translate]').forEach(el => {
         const key = el.getAttribute('data-translate');
         if (translations[currentLang][key]) {
           el.textContent = translations[currentLang][key];
         }
       });
-      
-      // 翻译占位符文本
       document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
         const key = el.getAttribute('data-translate-placeholder');
         if (translations[currentLang][key]) {
           el.placeholder = translations[currentLang][key];
         }
       });
-      
-      // 更新搜索历史显示
       displaySearchHistory();
-      updateAuthStatus(); // 更新认证状态文本
+      updateCounters();
     }
     
-    // 获取翻译文本
     function t(key, params = {}) {
       let text = translations[currentLang][key] || translations.cn[key] || key;
-      
-      // 替换参数
       for (const [param, value] of Object.entries(params)) {
         text = text.replace(`{${param}}`, value);
       }
-      
       return text;
     }
 
     // -----------------------------------------------------------
-    // 认证状态管理 
-    // -----------------------------------------------------------
-    const primarySuccess = '#4caf50'; 
-    const primaryError = '#f44336';  
-
-    function updateAuthStatus() {
-        const statusEl = document.getElementById('authStatus');
-        const emailDisplay = document.getElementById('userEmailDisplay');
-        const authContainer = document.getElementById('authPage');
-        const mainNav = document.getElementById('mainNav');
-        const uploadPage = document.getElementById('uploadPage');
-        const searchPage = document.getElementById('searchPage');
-        const infoDisplay = document.getElementById('userInfoDisplay');
-        
-        if (currentUser) {
-            statusEl.textContent = t('statusLoggedIn');
-            statusEl.style.color = primarySuccess; 
-            emailDisplay.textContent = currentUser.email;
-            
-            // 隐藏登录/注册表单，显示用户邮箱和退出按钮
-            document.getElementById('userEmail').style.display = 'none';
-            document.getElementById('userPassword').style.display = 'none';
-            document.getElementById('signInBtn').style.display = 'none';
-            document.getElementById('signUpBtn').style.display = 'none';
-            // 确保邮箱和密码的 label 也被隐藏
-            document.querySelector('label[for="userEmail"]').style.display = 'none';
-            document.querySelector('label[for="userPassword"]').style.display = 'none';
-            infoDisplay.style.display = 'flex';
-            
-            mainNav.style.display = 'flex';
-            // 切换到上传页面（默认）
-            if(authContainer.classList.contains('active')) {
-                authContainer.classList.remove('active');
-                uploadPage.classList.add('active');
-                searchPage.classList.remove('active');
-            }
-            
-            // 登录后加载数据
-            updateCounters();
-            displaySearchHistory();
-
-        } else {
-            statusEl.textContent = t('statusLoggedOut');
-            statusEl.style.color = primaryError; 
-            emailDisplay.textContent = '';
-            
-            // 显示登录/注册表单，隐藏用户邮箱和退出按钮
-            document.getElementById('userEmail').style.display = 'block';
-            document.getElementById('userPassword').style.display = 'block';
-            document.getElementById('signInBtn').style.display = 'block';
-            document.getElementById('signUpBtn').style.display = 'block';
-             // 显示邮箱和密码的 label
-            document.querySelector('label[for="userEmail"]').style.display = 'flex';
-            document.querySelector('label[for="userPassword"]').style.display = 'flex';
-            infoDisplay.style.display = 'none';
-
-            mainNav.style.display = 'none';
-            // 切换回认证页面
-            authContainer.classList.add('active');
-            uploadPage.classList.remove('active');
-            searchPage.classList.remove('active');
-            
-            // 重置计数器
-            document.getElementById('totalCount').textContent = 0;
-            document.getElementById('historyCount').textContent = 0;
-        }
-    }
-
-    // Supabase 认证监听
-    supabase.auth.onAuthStateChange((event, session) => {
-        currentUser = session ? session.user : null;
-        updateAuthStatus();
-    });
-
-    // 登录功能
-    document.getElementById('signInBtn').addEventListener('click', async () => {
-        const email = document.getElementById('userEmail').value;
-        const password = document.getElementById('userPassword').value;
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-
-        if (error) {
-            alert(`登录失败: ${error.message}`);
-        } else {
-            alert('登录成功！');
-            // 成功登录后 onAuthStateChange 会自动处理 UI 刷新
-        }
-    });
-
-    // 注册功能 (已检查并修正)
-    document.getElementById('signUpBtn').addEventListener('click', async () => {
-        const email = document.getElementById('userEmail').value;
-        const password = document.getElementById('userPassword').value;
-        
-        // 简单输入检查
-        if (!email || !password) {
-             alert('邮箱和密码都不能为空！');
-             return;
-        }
-        
-        const { error } = await supabase.auth.signUp({ email, password });
-
-        if (error) {
-            alert(`注册失败: ${error.message}`);
-        } else {
-            alert('注册成功！请检查您的邮箱进行确认。');
-            // 注册后应保持在认证页直到用户确认邮箱并登录
-        }
-    });
-    
-    // 退出功能
-    document.getElementById('signOutBtn').addEventListener('click', async () => {
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-            alert(`退出失败: ${error.message}`);
-        } else {
-            alert('已成功退出。');
-            // 成功退出后 onAuthStateChange 会自动处理 UI 刷新
-        }
-    });
-
-    // -----------------------------------------------------------
-    // 页面切换功能 (增加登录检查)
+    // 页面切换功能 (精简版本)
     // -----------------------------------------------------------
     document.querySelectorAll('.nav-link').forEach(link => {
       link.addEventListener('click', function(e) {
         e.preventDefault();
         
-        // 检查是否登录
-        if (!currentUser) {
-            alert('请先登录才能进行操作！');
-            // 阻止页面切换
-            return; 
-        }
-        
-        // 更新导航激活状态
         document.querySelectorAll('.nav-link').forEach(item => {
           item.classList.remove('active');
         });
         this.classList.add('active');
         
-        // 切换页面
         const targetPage = this.getAttribute('data-page');
         document.querySelectorAll('.page-container').forEach(page => {
           page.classList.remove('active');
         });
         document.getElementById(targetPage).classList.add('active');
-        document.getElementById('authPage').classList.remove('active'); // 隐藏认证页
         
-        // 如果是查询页面，加载搜索历史
         if (targetPage === 'searchPage') {
           displaySearchHistory();
         }
       });
     });
 
-
     // -----------------------------------------------------------
-    // Supabase 数据操作
+    // Supabase 数据操作 (使用 Public Role)
     // -----------------------------------------------------------
 
-    // 从 Supabase 读取所有追踪记录
-    async function readData() {
-        if (!currentUser) return [];
-        // RLS 策略会确保只返回当前用户的数据
-        const { data, error } = await supabase
-            .from('tracking_records')
-            .select('number, uploader, upload_time') 
-            .order('upload_time', { ascending: false }); 
-
-        if (error) {
-            console.error('读取数据失败:', error);
-            return [];
-        }
-        return data || [];
-    }
-
-    // 从 Supabase 读取搜索历史
-    async function getSearchHistory() {
-        if (!currentUser) return [];
-        // RLS 策略会确保只返回当前用户的数据
-        const { data, error } = await supabase
-            .from('search_history')
-            .select('term, time')
-            .order('time', { ascending: false }) 
-            .limit(5); 
-
-        if (error) {
-            console.error('读取历史失败:', error);
-            return [];
-        }
-        return data || [];
-    }
-    
-    // 更新计数器
+    // 从 Supabase 读取所有追踪记录数量
     async function updateCounters() {
-        if (!currentUser) {
-             document.getElementById('totalCount').textContent = 0;
-             document.getElementById('historyCount').textContent = 0;
-             return;
-        }
-        
-        // 追踪记录计数 (RLS 会自动过滤)
+        // tracking_records 计数
         const { count: recordCount, error: recordError } = await supabase
             .from('tracking_records')
-            .select('id', { count: 'exact', head: true });
+            .select('*', { count: 'exact', head: true });
         
         if (!recordError) {
             document.getElementById('totalCount').textContent = recordCount;
         }
 
-        // 搜索历史计数 (只计算最新的 5 条)
-        const historyData = await getSearchHistory();
-        document.getElementById('historyCount').textContent = historyData.length;
+        // 搜索历史计数 (直接从 localStorage 读取，因为 history 不存数据库)
+        const history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+        document.getElementById('historyCount').textContent = history.length;
+    }
+    
+    // 从 localStorage 读取搜索历史
+    function getSearchHistory() {
+      const history = localStorage.getItem('searchHistory');
+      return history ? JSON.parse(history) : [];
+    }
+
+    // 保存搜索历史到 localStorage
+    function saveSearchHistory(history) {
+      localStorage.setItem('searchHistory', JSON.stringify(history));
+      updateCounters();
     }
 
     // 显示搜索历史
-    async function displaySearchHistory() {
-      const history = await getSearchHistory();
+    function displaySearchHistory() {
+      const history = getSearchHistory();
       const historyContainer = document.getElementById('searchHistory');
       historyContainer.innerHTML = '';
       
@@ -946,10 +689,8 @@ ZT1122334455"></textarea>
       history.forEach(item => {
         const tag = document.createElement('div');
         tag.className = 'search-tag';
-        const displayTime = new Date(item.time).toLocaleTimeString();
-        tag.innerHTML = `${item.term} <i class="fas fa-clock"></i> ${displayTime}`;
+        tag.innerHTML = `${item.term} <i class="fas fa-clock"></i> ${item.time}`;
         
-        // 点击历史记录进行搜索
         tag.addEventListener('click', () => {
           document.getElementById('searchKey').value = item.term;
           document.getElementById('searchBtn').click();
@@ -961,11 +702,6 @@ ZT1122334455"></textarea>
 
     // 添加上传功能
     document.getElementById('uploadBtn').addEventListener('click', async function(){
-      if (!currentUser) {
-        alert('请先登录才能上传！');
-        return;
-      }
-      
       const uploader = document.getElementById('uploader').value.trim();
       const text = document.getElementById('trackingNumbers').value.trim();
       
@@ -979,15 +715,13 @@ ZT1122334455"></textarea>
         return;
       }
       
-      // 按行分割，去除前后空格，过滤空行
       let numbers = text.split('\n').map(s => s.trim()).filter(s => s);
-      // 去除同一批内的重复
       numbers = [...new Set(numbers)];
       
-      // 1. 检查单号是否已存在 (RLS 限制在当前用户的数据范围内检查)
+      // 1. 检查单号是否已存在
       const { data: existingRecords, error: checkError } = await supabase
           .from('tracking_records')
-          .select('number, uploader')
+          .select('number')
           .in('number', numbers);
 
       if (checkError) {
@@ -1002,14 +736,13 @@ ZT1122334455"></textarea>
       
       numbers.forEach(number => {
           if (existingNumbers.has(number)) {
-              const dupe = existingRecords.find(r => r.number === number);
-              duplicates.push(`${number} (由 ${dupe.uploader} 上传)`);
+              duplicates.push(number);
           } else {
               newRecordsToInsert.push({
                   number: number,
                   uploader: uploader,
                   upload_time: now
-                  // user_id 会由 RLS 策略自动设置
+                  // user_id 字段将不需要或设置为 NULL (见 RLS 步骤)
               });
           }
       });
@@ -1038,7 +771,6 @@ ZT1122334455"></textarea>
           if (duplicates.length > 0) {
               alert(t('saveSuccessWithDuplicates', {
                   count: newRecordsToInsert.length,
-                  uploader: uploader,
                   duplicates: duplicates.join(', ')
               }));
           } else {
@@ -1046,7 +778,6 @@ ZT1122334455"></textarea>
           }
       } else {
           alert(t('saveDuplicatesOnly', {
-              uploader: uploader,
               duplicates: duplicates.join(', ')
           }));
       }
@@ -1059,31 +790,25 @@ ZT1122334455"></textarea>
 
     // 添加搜索功能
     document.getElementById('searchBtn').addEventListener('click', async function(){
-      if (!currentUser) {
-        alert('请先登录才能搜索！');
-        return;
-      }
-      
       const key = document.getElementById('searchKey').value.trim();
       if (key.length < 4) {
         alert(t('minDigits'));
         return;
       }
       
-      // 显示加载动画
       const loader = document.getElementById('searchLoader');
       const resultsDiv = document.getElementById('searchResults');
       loader.style.display = 'block';
       resultsDiv.innerHTML = "";
       
-      // 1. 从 Supabase 搜索 (使用 endsWith 模拟)
+      // 1. 从 Supabase 搜索
       const searchTerm = `%${key}`;
       
-      // RLS 策略会确保只搜索当前用户的数据
+      // RLS 策略必须允许 public 角色查询
       const { data: matched, error: searchError } = await supabase
           .from('tracking_records')
           .select('number, uploader, upload_time')
-          .ilike('number', searchTerm); // ILIKE 忽略大小写，%key 匹配结尾
+          .ilike('number', searchTerm);
           
       loader.style.display = 'none';
 
@@ -1109,46 +834,29 @@ ZT1122334455"></textarea>
         });
       }
       
-      // 2. 保存搜索历史到 Supabase
-      const historyRecord = {
-          term: key,
-          time: new Date().toISOString() // user_id 由 RLS 策略自动设置
-      };
-      
-      const { error: historyError } = await supabase
-          .from('search_history')
-          .insert([historyRecord]);
-          
-      if (historyError) {
-          console.error('保存搜索历史失败:', historyError);
+      // 2. 保存搜索历史到 localStorage
+      const history = getSearchHistory();
+      const now = new Date().toLocaleTimeString();
+      const existingIndex = history.findIndex(item => item.term === key);
+      if (existingIndex !== -1) {
+        history.splice(existingIndex, 1);
       }
-      
-      // 重新显示搜索历史
+      history.unshift({
+        term: key,
+        time: now
+      });
+      if (history.length > 5) {
+        history.pop();
+      }
+      saveSearchHistory(history);
       displaySearchHistory();
     });
 
     // 清空搜索历史
-    document.getElementById('clearHistory').addEventListener('click', async function() {
-      if (!currentUser) {
-        alert('请先登录才能操作！');
-        return;
-      }
-      
+    document.getElementById('clearHistory').addEventListener('click', function() {
       if (confirm(t('clearConfirm'))) {
-        // RLS 策略会确保只删除当前用户的历史记录
-        const { error } = await supabase
-            .from('search_history')
-            .delete()
-            .neq('term', 'NEVER_MATCH'); // 欺骗语句，确保执行删除
-
-        if (error) {
-            alert('清空记录失败: ' + error.message);
-            console.error(error);
-        } else {
-            alert('搜索记录已清空。');
-            displaySearchHistory();
-            updateCounters();
-        }
+        saveSearchHistory([]);
+        displaySearchHistory();
       }
     });
 
@@ -1160,13 +868,10 @@ ZT1122334455"></textarea>
     });
 
     // 初始化
-    document.addEventListener('DOMContentLoaded', () => {
-      // 加载用户首选语言
+    function initApp() {
       const savedLang = localStorage.getItem('preferredLanguage') || 'cn';
       setLanguage(savedLang);
-      
-      // 检查当前认证状态，由 onAuthStateChange 自动处理
-    });
+    }
   </script>
 </body>
 </html>
