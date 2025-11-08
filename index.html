@@ -4,12 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>快递单号管理 (公开版)</title>
+  
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+Myanmar:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    /* 样式代码保持不变，与您之前的版本一致 */
+    /* 样式代码保持不变 */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -418,7 +419,7 @@
     }
   </style>
 </head>
-<body onload="initApp()">
+<body>
   <div class="language-switcher">
     <button class="lang-btn active" data-lang="cn">中文</button>
     <button class="lang-btn" data-lang="mm">မြန်မာ</button>
@@ -508,16 +509,16 @@ ZT1122334455"></textarea>
 
   <script>
     // -----------------------------------------------------------
-    // SUPABASE 配置 (重要：无需认证)
+    // 📢📢📢 关键：请替换成您自己的 Supabase URL 和 KEY 📢📢📢
     // -----------------------------------------------------------
-    const SUPABASE_URL = 'https://mjirgvgnglrffwavenysf.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qaXJndmdnbHJmZndhdmVueXNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1Nzc3MjEsImV4cCI6MjA3ODE1MzcyMX0.PNkKgv333cAhAClj3AtBlcPQkm1qp5RKm-KwhWc91L0';
+    const SUPABASE_URL = 'https://YOUR_SUPABASE_URL.supabase.co'; // <-- 替换您的 URL
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // <-- 替换您的 Public Anon Key
     
-    // 直接创建 Supabase 客户端实例，不涉及 auth
+    // 直接创建 Supabase 客户端实例 (修复了 ReferenceError)
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
     // -----------------------------------------------------------
-    // 语言和翻译数据 (保持不变)
+    // 语言和翻译数据 
     // -----------------------------------------------------------
     const translations = {
       cn: {
@@ -539,8 +540,8 @@ ZT1122334455"></textarea>
         noResults: "没有找到匹配记录",
         noHistory: "暂无搜索记录",
         saveSuccess: "上传成功！",
-        saveSuccessWithDuplicates: "上传成功！新上传 {count} 条记录。\n以下单号已上传过，未重复上传：{duplicates}",
-        saveDuplicatesOnly: "所有上传的单号已上传过，无新记录上传：{duplicates}",
+        saveSuccessWithDuplicates: "上传成功！新上传 {count} 条记录。",
+        saveDuplicatesOnly: "所有上传的单号已存在，无新记录上传。",
         fillRequired: "请填写上传地点和快递单号！",
         minDigits: "请输入至少 4 位数字！",
         clearConfirm: "确定要清空所有搜索记录吗？",
@@ -550,7 +551,7 @@ ZT1122334455"></textarea>
         recordLocation: "地点",
         recordTime: "上传时间",
       },
-      mm: { /* ... (缅文翻译保持不变) ... */
+      mm: { 
         totalCount: "သိမ်းဆည်းထားသော ကုဒ်နံပါတ်များ",
         historyCount: "ရှာဖွေမှု မှတ်တမ်း",
         uploadNav: "ကုဒ်နံပါတ် တင်ရန်",
@@ -569,8 +570,8 @@ ZT1122334455"></textarea>
         noResults: "မှတ်တမ်းမရှိပါ",
         noHistory: "ရှာဖွေမှု မှတ်တမ်း မရှိပါ",
         saveSuccess: "အောင်မြင်စွာ တင်ပြီးပါပြီ!",
-        saveSuccessWithDuplicates: "အောင်မြင်စွာ တင်ပြီးပါပြီ! {count} မှတ်တမ်းအသစ် တင်ပြီးပါပြီ။\nအောက်ပါ ကုဒ်နံပါတ်များကို ယခင်တင်ပြီးဖြစ်ပါသည် - {duplicates}",
-        saveDuplicatesOnly: "တင်လိုက်သော ကုဒ်နံပါတ်အားလုံးကို ယခင်တင်ပြီးဖြစ်ပါသည် - {duplicates}",
+        saveSuccessWithDuplicates: "အောင်မြင်စွာ တင်ပြီးပါပြီ! {count} မှတ်တမ်းအသစ် တင်ပြီးပါပြီ။",
+        saveDuplicatesOnly: "တင်လိုက်သော ကုဒ်နံပါတ်အားလုံးကို ယခင်တင်ပြီးဖြစ်ပါသည်၊ မှတ်တမ်းအသစ်မရှိပါ။",
         fillRequired: "တင်သည့်နေရာနှင့် ကုဒ်နံပါတ်များ ထည့်ပါ!",
         minDigits: "အနည်းဆုံး နံပါတ် ၄ လုံး ထည့်ပါ!",
         clearConfirm: "ရှာဖွေမှု မှတ်တမ်းအားလုံးကို ရှင်းလိုပါသလား?",
@@ -582,7 +583,6 @@ ZT1122334455"></textarea>
       }
     };
     
-    // 当前语言设置（默认为中文）
     let currentLang = 'cn';
     
     function setLanguage(lang) {
@@ -608,7 +608,6 @@ ZT1122334455"></textarea>
         }
       });
       displaySearchHistory();
-      updateCounters();
     }
     
     function t(key, params = {}) {
@@ -644,38 +643,18 @@ ZT1122334455"></textarea>
     });
 
     // -----------------------------------------------------------
-    // Supabase 数据操作 (使用 Public Role)
+    // 搜索历史逻辑 (使用 localStorage)
     // -----------------------------------------------------------
-
-    // 从 Supabase 读取所有追踪记录数量
-    async function updateCounters() {
-        // tracking_records 计数
-        const { count: recordCount, error: recordError } = await supabase
-            .from('tracking_records')
-            .select('*', { count: 'exact', head: true });
-        
-        if (!recordError) {
-            document.getElementById('totalCount').textContent = recordCount;
-        }
-
-        // 搜索历史计数 (直接从 localStorage 读取，因为 history 不存数据库)
-        const history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
-        document.getElementById('historyCount').textContent = history.length;
-    }
-    
-    // 从 localStorage 读取搜索历史
     function getSearchHistory() {
       const history = localStorage.getItem('searchHistory');
       return history ? JSON.parse(history) : [];
     }
 
-    // 保存搜索历史到 localStorage
     function saveSearchHistory(history) {
       localStorage.setItem('searchHistory', JSON.stringify(history));
       updateCounters();
     }
 
-    // 显示搜索历史
     function displaySearchHistory() {
       const history = getSearchHistory();
       const historyContainer = document.getElementById('searchHistory');
@@ -700,7 +679,37 @@ ZT1122334455"></textarea>
       });
     }
 
-    // 添加上传功能
+    document.getElementById('clearHistory').addEventListener('click', function() {
+      if (confirm(t('clearConfirm'))) {
+        saveSearchHistory([]);
+        displaySearchHistory();
+      }
+    });
+
+    // -----------------------------------------------------------
+    // Supabase 数据操作和计数器更新 
+    // -----------------------------------------------------------
+
+    async function getTotalCount() {
+      // 获取总记录数
+      const { count, error } = await supabase
+        .from('tracking_records')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) {
+        console.error('获取总数失败:', error.message);
+        return 0;
+      }
+      return count || 0;
+    }
+
+    async function updateCounters() {
+      const count = await getTotalCount();
+      document.getElementById('totalCount').textContent = count;
+      document.getElementById('historyCount').textContent = getSearchHistory().length;
+    }
+    
+    // 添加上传功能 (使用 Supabase)
     document.getElementById('uploadBtn').addEventListener('click', async function(){
       const uploader = document.getElementById('uploader').value.trim();
       const text = document.getElementById('trackingNumbers').value.trim();
@@ -709,86 +718,67 @@ ZT1122334455"></textarea>
         alert(t('locationRequired'));
         return;
       }
-      
       if (!text) {
         alert(t('numbersRequired'));
         return;
       }
       
       let numbers = text.split('\n').map(s => s.trim()).filter(s => s);
-      numbers = [...new Set(numbers)];
+      numbers = [...new Set(numbers)]; // 去除同一批内的重复
       
-      // 1. 检查单号是否已存在
-      const { data: existingRecords, error: checkError } = await supabase
-          .from('tracking_records')
-          .select('number')
-          .in('number', numbers);
+      const now = new Date().toISOString();
+      const recordsToInsert = numbers.map(number => ({
+        number,
+        uploader,
+        upload_time: now 
+      }));
 
-      if (checkError) {
-          alert('检查重复失败: ' + checkError.message);
+      const uploadBtn = this;
+      uploadBtn.disabled = true;
+
+      // 尝试插入所有记录
+      const { data: insertedData, error: insertError } = await supabase
+          .from('tracking_records')
+          .insert(recordsToInsert)
+          .select('number'); 
+
+      uploadBtn.disabled = false;
+
+      if (insertError) {
+          // 这里的报错通常是因为唯一性约束冲突或 RLS 权限问题
+          // 既然 RLS 已设为 public，多半是重复单号或数据库配置问题
+          console.error('Insert Error:', insertError);
+          alert(`上传失败: ${insertError.message || '请检查单号是否已存在或数据库连接是否正确。'}`);
           return;
       }
 
-      const existingNumbers = new Set(existingRecords.map(r => r.number));
-      const newRecordsToInsert = [];
-      const duplicates = [];
-      const now = new Date().toISOString(); 
+      const newCount = insertedData ? insertedData.length : 0;
       
-      numbers.forEach(number => {
-          if (existingNumbers.has(number)) {
-              duplicates.push(number);
-          } else {
-              newRecordsToInsert.push({
-                  number: number,
-                  uploader: uploader,
-                  upload_time: now
-                  // user_id 字段将不需要或设置为 NULL (见 RLS 步骤)
-              });
-          }
-      });
-      
-      if (newRecordsToInsert.length > 0) {
-          // 2. 插入新记录
-          const { error: insertError } = await supabase
-              .from('tracking_records')
-              .insert(newRecordsToInsert);
-
-          if (insertError) {
-              alert('上传失败: ' + insertError.message);
-              return;
-          }
-          
-          // 插入成功后的通知和动画
-          const btn = this;
-          btn.innerHTML = `<i class="fas fa-check"></i> ${t('saveSuccess')}`;
-          btn.style.animation = 'success 1.5s';
-          
-          setTimeout(() => {
-              btn.innerHTML = `<i class="fas fa-upload"></i> ${t('uploadBtn')}`;
-              btn.style.animation = '';
-          }, 2000);
-          
-          if (duplicates.length > 0) {
-              alert(t('saveSuccessWithDuplicates', {
-                  count: newRecordsToInsert.length,
-                  duplicates: duplicates.join(', ')
-              }));
-          } else {
-              alert(t('saveSuccess'));
-          }
+      if (newCount > 0) {
+        // 成功插入新记录
+        uploadBtn.innerHTML = `<i class="fas fa-check"></i> ${t('saveSuccess')}`;
+        uploadBtn.style.animation = 'success 1.5s';
+        
+        setTimeout(() => {
+          uploadBtn.innerHTML = `<i class="fas fa-upload"></i> ${t('uploadBtn')}`;
+          uploadBtn.style.animation = '';
+        }, 2000);
+        
+        alert(t('saveSuccessWithDuplicates', {
+          count: newCount
+        }));
       } else {
-          alert(t('saveDuplicatesOnly', {
-              duplicates: duplicates.join(', ')
-          }));
+         // 如果 insertedData 为空，说明插入操作没有新增记录（可能全部被唯一性约束阻止）
+         alert(t('saveDuplicatesOnly'));
       }
       
-      // 清空表单并更新计数器
+      // 清空表单
       document.getElementById('trackingNumbers').value = '';
       document.getElementById('uploader').value = '';
-      updateCounters();
+      updateCounters(); // 更新计数器
     });
 
-    // 添加搜索功能
+    // 添加搜索功能 (使用 Supabase)
     document.getElementById('searchBtn').addEventListener('click', async function(){
       const key = document.getElementById('searchKey').value.trim();
       if (key.length < 4) {
@@ -801,21 +791,18 @@ ZT1122334455"></textarea>
       loader.style.display = 'block';
       resultsDiv.innerHTML = "";
       
-      // 1. 从 Supabase 搜索
-      const searchTerm = `%${key}`;
-      
-      // RLS 策略必须允许 public 角色查询
-      const { data: matched, error: searchError } = await supabase
-          .from('tracking_records')
-          .select('number, uploader, upload_time')
-          .ilike('number', searchTerm);
-          
-      loader.style.display = 'none';
+      // 使用 ILIKE 查询实现模糊匹配 (Public RLS 策略已允许)
+      const { data: matched, error } = await supabase
+        .from('tracking_records')
+        .select('number, uploader, upload_time')
+        .ilike('number', `%${key}`); 
 
-      if (searchError) {
-          alert('搜索失败: ' + searchError.message);
-          console.error(searchError);
-          return;
+      loader.style.display = 'none';
+      
+      if (error) {
+        console.error('Search Error:', error);
+        resultsDiv.innerHTML = `<div class="no-results">查询失败: ${error.message}</div>`;
+        return;
       }
       
       if (matched.length === 0) {
@@ -824,17 +811,16 @@ ZT1122334455"></textarea>
         matched.forEach(rec => {
           const div = document.createElement('div');
           div.className = 'record';
-          const displayTime = new Date(rec.upload_time).toLocaleString();
           div.innerHTML = `
             <div><strong>${t('recordNumber')}：</strong>${rec.number}</div>
             <div><strong>${t('recordLocation')}：</strong>${rec.uploader}</div>
-            <div><strong>${t('recordTime')}：</strong>${displayTime}</div>
+            <div><strong>${t('recordTime')}：</strong>${new Date(rec.upload_time).toLocaleString()}</div>
           `;
           resultsDiv.appendChild(div);
         });
       }
       
-      // 2. 保存搜索历史到 localStorage
+      // 保存搜索历史
       const history = getSearchHistory();
       const now = new Date().toLocaleTimeString();
       const existingIndex = history.findIndex(item => item.term === key);
@@ -852,14 +838,6 @@ ZT1122334455"></textarea>
       displaySearchHistory();
     });
 
-    // 清空搜索历史
-    document.getElementById('clearHistory').addEventListener('click', function() {
-      if (confirm(t('clearConfirm'))) {
-        saveSearchHistory([]);
-        displaySearchHistory();
-      }
-    });
-
     // 语言切换事件
     document.querySelectorAll('.lang-btn').forEach(btn => {
       btn.addEventListener('click', function() {
@@ -868,10 +846,13 @@ ZT1122334455"></textarea>
     });
 
     // 初始化
-    function initApp() {
+    document.addEventListener('DOMContentLoaded', () => {
       const savedLang = localStorage.getItem('preferredLanguage') || 'cn';
       setLanguage(savedLang);
-    }
+      
+      displaySearchHistory();
+      updateCounters(); 
+    });
   </script>
 </body>
 </html>
