@@ -595,7 +595,7 @@ ZT1122334455"></textarea>
 
   <script>
     // -----------------------------------------------------------
-    // SUPABASE 配置 (已替换您的真实配置)
+    // SUPABASE 配置 (已植入您的真实配置)
     // -----------------------------------------------------------
     const SUPABASE_URL = 'https://mjirgvgnglrffwavenysf.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qaXJndmdnbHJmZndhdmVueXNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1Nzc3MjEsImV4cCI6MjA3ODE1MzcyMX0.PNkKgv333cAhAClj3AtBlcPQkm1qp5RKm-KwhWc91L0';
@@ -636,15 +636,15 @@ ZT1122334455"></textarea>
         recordNumber: "单号",
         recordLocation: "地点",
         recordTime: "上传时间",
-        authTitle: "用户认证", // 新增
-        emailLabel: "邮箱",      // 新增
-        passwordLabel: "密码",    // 新增
-        signInBtn: "登录",       // 新增
-        signUpBtn: "注册",       // 新增
-        signOutBtn: "退出",      // 新增
-        userStatus: "状态",      // 新增
-        statusLoggedIn: "已登录", // 新增
-        statusLoggedOut: "未登录" // 新增
+        authTitle: "用户认证", 
+        emailLabel: "邮箱",      
+        passwordLabel: "密码",    
+        signInBtn: "登录",       
+        signUpBtn: "注册",       
+        signOutBtn: "退出",      
+        userStatus: "状态",      
+        statusLoggedIn: "已登录", 
+        statusLoggedOut: "未登录" 
       },
       mm: {
         totalCount: "သိမ်းဆည်းထားသော ကုဒ်နံပါတ်များ",
@@ -675,15 +675,15 @@ ZT1122334455"></textarea>
         recordNumber: "နံပါတ်",
         recordLocation: "နေရာ",
         recordTime: "တင်ချိန်",
-        authTitle: "အသုံးပြုသူ အတည်ပြုချက်", // 新增
-        emailLabel: "အီးမေးလ်",    // 新增
-        passwordLabel: "စကားဝှက်",  // 新增
-        signInBtn: "၀င်ရန်",      // 新增
-        signUpBtn: "မှတ်ပုံတင်ရန်", // 新增
-        signOutBtn: "ထွက်ရန်",     // 新增
-        userStatus: "အခြေအနေ",    // 新增
-        statusLoggedIn: "ဝင်ပြီး",  // 新增
-        statusLoggedOut: "မဝင်ရသေး" // 新增
+        authTitle: "အသုံးပြုသူ အတည်ပြုချက်", 
+        emailLabel: "အီးမေးလ်",    
+        passwordLabel: "စကားဝှက်",  
+        signInBtn: "၀င်ရန်",      
+        signUpBtn: "မှတ်ပုံတင်ရန်", 
+        signOutBtn: "ထွက်ရန်",     
+        userStatus: "အခြေအနေ",    
+        statusLoggedIn: "ဝင်ပြီး",  
+        statusLoggedOut: "မဝင်ရသေး" 
       }
     };
 
@@ -740,8 +740,11 @@ ZT1122334455"></textarea>
     }
 
     // -----------------------------------------------------------
-    // 认证状态管理 (新增/修改)
+    // 认证状态管理 (修正后的版本)
     // -----------------------------------------------------------
+    const primarySuccess = '#4caf50'; // 修正：直接使用颜色值
+    const primaryError = '#f44336';  // 修正：直接使用颜色值
+
     function updateAuthStatus() {
         const statusEl = document.getElementById('authStatus');
         const emailDisplay = document.getElementById('userEmailDisplay');
@@ -753,21 +756,26 @@ ZT1122334455"></textarea>
         
         if (currentUser) {
             statusEl.textContent = t('statusLoggedIn');
-            statusEl.style.color = var(--success);
+            statusEl.style.color = primarySuccess; // 使用修正后的颜色值
             emailDisplay.textContent = currentUser.email;
             
-            // 显示用户邮箱和退出按钮，隐藏登录/注册表单
+            // 隐藏登录/注册表单，显示用户邮箱和退出按钮
             document.getElementById('userEmail').style.display = 'none';
             document.getElementById('userPassword').style.display = 'none';
             document.getElementById('signInBtn').style.display = 'none';
             document.getElementById('signUpBtn').style.display = 'none';
+            // 确保邮箱和密码的 label 也被隐藏，防止出现空白
+            document.querySelector('label[for="userEmail"]').style.display = 'none';
+            document.querySelector('label[for="userPassword"]').style.display = 'none';
             infoDisplay.style.display = 'flex';
             
             mainNav.style.display = 'flex';
-            // 切换到上传页面（默认）
-            authContainer.classList.remove('active');
-            uploadPage.classList.add('active');
-            searchPage.classList.remove('active');
+            // 切换到上传页面（默认），如果当前页面不是认证页
+            if(authContainer.classList.contains('active')) {
+                authContainer.classList.remove('active');
+                uploadPage.classList.add('active');
+                searchPage.classList.remove('active');
+            }
             
             // 登录后加载数据
             updateCounters();
@@ -775,14 +783,17 @@ ZT1122334455"></textarea>
 
         } else {
             statusEl.textContent = t('statusLoggedOut');
-            statusEl.style.color = var(--error);
+            statusEl.style.color = primaryError; // 使用修正后的颜色值
             emailDisplay.textContent = '';
             
-            // 隐藏用户邮箱和退出按钮，显示登录/注册表单
+            // 显示登录/注册表单，隐藏用户邮箱和退出按钮
             document.getElementById('userEmail').style.display = 'block';
             document.getElementById('userPassword').style.display = 'block';
             document.getElementById('signInBtn').style.display = 'block';
             document.getElementById('signUpBtn').style.display = 'block';
+             // 显示邮箱和密码的 label
+            document.querySelector('label[for="userEmail"]').style.display = 'flex';
+            document.querySelector('label[for="userPassword"]').style.display = 'flex';
             infoDisplay.style.display = 'none';
 
             mainNav.style.display = 'none';
@@ -813,19 +824,28 @@ ZT1122334455"></textarea>
             alert(`登录失败: ${error.message}`);
         } else {
             alert('登录成功！');
+            // 成功登录后 onAuthStateChange 会自动处理 UI 刷新
         }
     });
 
-    // 注册功能
+    // 注册功能 (已检查并修正)
     document.getElementById('signUpBtn').addEventListener('click', async () => {
         const email = document.getElementById('userEmail').value;
         const password = document.getElementById('userPassword').value;
+        
+        // 简单输入检查
+        if (!email || !password) {
+             alert('邮箱和密码都不能为空！');
+             return;
+        }
+        
         const { error } = await supabase.auth.signUp({ email, password });
 
         if (error) {
             alert(`注册失败: ${error.message}`);
         } else {
             alert('注册成功！请检查您的邮箱进行确认。');
+            // 注册后应保持在认证页直到用户确认邮箱并登录
         }
     });
     
@@ -836,11 +856,12 @@ ZT1122334455"></textarea>
             alert(`退出失败: ${error.message}`);
         } else {
             alert('已成功退出。');
+            // 成功退出后 onAuthStateChange 会自动处理 UI 刷新
         }
     });
 
     // -----------------------------------------------------------
-    // 页面切换功能 (修改)
+    // 页面切换功能 (增加登录检查)
     // -----------------------------------------------------------
     document.querySelectorAll('.nav-link').forEach(link => {
       link.addEventListener('click', function(e) {
@@ -849,7 +870,8 @@ ZT1122334455"></textarea>
         // 检查是否登录
         if (!currentUser) {
             alert('请先登录才能进行操作！');
-            return;
+            // 阻止页面切换
+            return; 
         }
         
         // 更新导航激活状态
@@ -881,10 +903,11 @@ ZT1122334455"></textarea>
     // 从 Supabase 读取所有追踪记录
     async function readData() {
         if (!currentUser) return [];
+        // RLS 策略会确保只返回当前用户的数据
         const { data, error } = await supabase
             .from('tracking_records')
-            .select('number, uploader, upload_time') // 只查询需要的字段
-            .order('upload_time', { ascending: false }); // 按时间倒序
+            .select('number, uploader, upload_time') 
+            .order('upload_time', { ascending: false }); 
 
         if (error) {
             console.error('读取数据失败:', error);
@@ -896,11 +919,12 @@ ZT1122334455"></textarea>
     // 从 Supabase 读取搜索历史
     async function getSearchHistory() {
         if (!currentUser) return [];
+        // RLS 策略会确保只返回当前用户的数据
         const { data, error } = await supabase
             .from('search_history')
             .select('term, time')
-            .order('time', { ascending: false }) // 按时间倒序
-            .limit(5); // 只取最新的 5 条
+            .order('time', { ascending: false }) 
+            .limit(5); 
 
         if (error) {
             console.error('读取历史失败:', error);
@@ -911,9 +935,13 @@ ZT1122334455"></textarea>
     
     // 更新计数器
     async function updateCounters() {
-        if (!currentUser) return;
+        if (!currentUser) {
+             document.getElementById('totalCount').textContent = 0;
+             document.getElementById('historyCount').textContent = 0;
+             return;
+        }
         
-        // 追踪记录计数
+        // 追踪记录计数 (RLS 会自动过滤)
         const { count: recordCount, error: recordError } = await supabase
             .from('tracking_records')
             .select('id', { count: 'exact', head: true });
@@ -941,7 +969,6 @@ ZT1122334455"></textarea>
       history.forEach(item => {
         const tag = document.createElement('div');
         tag.className = 'search-tag';
-        // 注意：Supabase 返回的时间是 ISO 格式，这里简单处理
         const displayTime = new Date(item.time).toLocaleTimeString();
         tag.innerHTML = `${item.term} <i class="fas fa-clock"></i> ${displayTime}`;
         
@@ -980,7 +1007,7 @@ ZT1122334455"></textarea>
       // 去除同一批内的重复
       numbers = [...new Set(numbers)];
       
-      // 1. 检查单号是否已存在
+      // 1. 检查单号是否已存在 (RLS 限制在当前用户的数据范围内检查)
       const { data: existingRecords, error: checkError } = await supabase
           .from('tracking_records')
           .select('number, uploader')
@@ -994,11 +1021,10 @@ ZT1122334455"></textarea>
       const existingNumbers = new Set(existingRecords.map(r => r.number));
       const newRecordsToInsert = [];
       const duplicates = [];
-      const now = new Date().toISOString(); // 使用 ISO 格式以便 Supabase 接受
+      const now = new Date().toISOString(); 
       
       numbers.forEach(number => {
           if (existingNumbers.has(number)) {
-              // 找到重复项的上传人
               const dupe = existingRecords.find(r => r.number === number);
               duplicates.push(`${number} (由 ${dupe.uploader} 上传)`);
           } else {
@@ -1074,9 +1100,9 @@ ZT1122334455"></textarea>
       resultsDiv.innerHTML = "";
       
       // 1. 从 Supabase 搜索 (使用 endsWith 模拟)
-      // 注意：PostgreSQL 中的 ILIKE 结合 % 符号可以实现结尾匹配
       const searchTerm = `%${key}`;
       
+      // RLS 策略会确保只搜索当前用户的数据
       const { data: matched, error: searchError } = await supabase
           .from('tracking_records')
           .select('number, uploader, upload_time')
@@ -1132,11 +1158,11 @@ ZT1122334455"></textarea>
       }
       
       if (confirm(t('clearConfirm'))) {
-        // 使用 delete() 删除所有当前用户的历史记录 (RLS 策略会确保只删除自己的)
+        // RLS 策略会确保只删除当前用户的历史记录
         const { error } = await supabase
             .from('search_history')
             .delete()
-            .neq('term', 'NEVER_MATCH'); // 欺骗语句，确保执行删除，但 RLS 才是真正的过滤器
+            .neq('term', 'NEVER_MATCH'); // 欺骗语句，确保执行删除
 
         if (error) {
             alert('清空记录失败: ' + error.message);
