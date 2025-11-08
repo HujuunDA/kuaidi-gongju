@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>快递单号管理与同步系统 (Supabase 同步版)</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+Myanmar:wght@400;700&display=swap" rel="stylesheet">
-  
+  <title>快递单号管理 (Supabase 云同步)</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+Myanmar:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    /* CSS 样式：保持不变，专注于功能修改 */
+    /* ... [CSS 样式部分，保持不变] ... */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -49,8 +48,16 @@
 
     /* 语言切换器 */
     .language-switcher {
-      /* **修改：隐藏原有的绝对定位切换器** */
-      display: none; 
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 50px;
+      padding: 8px 15px;
+      box-shadow: var(--shadow);
+      z-index: 100;
+      display: flex;
+      gap: 10px;
     }
 
     .lang-btn {
@@ -353,6 +360,12 @@
       .nav-item {
         margin-bottom: 5px;
       }
+      
+      .language-switcher {
+        top: 10px;
+        right: 10px;
+        padding: 6px 12px;
+      }
     }
 
     /* 加载动画 */
@@ -410,44 +423,7 @@
       color: var(--primary);
     }
     
-    /* 语言切换框样式 (新增/修改) */
-    .lang-switch-box {
-        cursor: pointer;
-        /* 使用不同的背景色以区分 */
-        background: linear-gradient(90deg, #f0f4f8, #e3f2fd); 
-        padding: 6px 12px; 
-        transition: var(--transition);
-        border-radius: 20px; 
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    .lang-switch-box:hover {
-        box-shadow: 0 4px 10px rgba(63, 81, 181, 0.2);
-    }
-    
-    .lang-switch-box .lang-btn {
-        padding: 3px 6px;
-        font-size: 0.9rem;
-        font-weight: 700;
-        color: var(--gray);
-        background: none;
-        border: none;
-        transition: var(--transition);
-        line-height: 1; 
-        cursor: pointer;
-    }
-
-    .lang-switch-box .lang-btn.active {
-      color: var(--primary); /* 当前激活的语言用主色显示 */
-    }
-    
-    .lang-switch-box .lang-btn:not(.active) {
-      color: var(--gray);
-    }
-    .lang-switch-box .lang-btn:not(.active):hover {
-        color: var(--primary-light);
-    }
-    
-    /* 上传计数器 (未修改) */
+    /* 上传计数器 */
     .counter {
       background: var(--primary);
       color: white;
@@ -461,63 +437,91 @@
       font-size: 0.8rem;
     }
     
-    /* **新增: 导出按钮容器样式** */
-    .export-btn-container {
-        display: flex;
-        align-items: center;
-        background: rgba(255, 255, 255, 0.7);
-        padding: 8px 15px;
+    /* 新增：认证界面样式 */
+    #authPage {
+        background: white;
         border-radius: 20px;
-        font-size: 0.9rem;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        padding: 40px;
+        margin: 50px auto;
+        max-width: 400px;
+        box-shadow: var(--shadow);
+        text-align: center;
     }
 
-    .export-btn {
-        background: none;
-        border: none;
-        color: var(--primary);
-        font-weight: 500;
-        cursor: pointer;
-        transition: var(--transition);
+    #authPage button {
+        margin-top: 10px;
+    }
+    
+    .user-info {
+        background: #e8eaf6;
+        padding: 15px;
+        border-radius: 12px;
+        margin-top: 20px;
         display: flex;
+        justify-content: space-between;
         align-items: center;
-        padding: 0;
-        margin-left: 5px; /* 与图标分隔 */
     }
-
-    .export-btn:hover {
+    
+    .user-info span {
+        font-weight: 500;
         color: var(--primary-dark);
-        transform: scale(1.05);
-    }
-    .export-btn i {
-        margin-right: 5px;
-        color: var(--success); /* 导出按钮使用绿色 */
+        word-break: break-all;
     }
   </style>
 </head>
 <body>
+  <div class="language-switcher">
+    <button class="lang-btn active" data-lang="cn">中文</button>
+    <button class="lang-btn" data-lang="mm">မြန်မာ</button>
+  </div>
+
   <div class="container">
     <div class="status-indicator">
       <div class="status-item">
+        <i class="fas fa-user-circle"></i> <span data-translate="userStatus">状态</span>: <span id="authStatus">未登录</span>
+      </div>
+      <div class="status-item">
         <i class="fas fa-box"></i> <span data-translate="totalCount">已存单号</span>: <span id="totalCount">0</span>
       </div>
-      
-      <div class="export-btn-container">
-        <button class="export-btn" id="exportExcelBtn">
-            <i class="fas fa-file-excel"></i> <span data-translate="exportBtn">导出 Excel</span>
-        </button>
-      </div>
-      
-      <div class="status-item lang-switch-box">
-        <i class="fas fa-language"></i> <span data-translate="currentLang"></span>: 
-        <button class="lang-btn active" data-lang="cn">中文</button>
-        <span style="color: #ccc;">(</span>
-        <button class="lang-btn" data-lang="mm">မြန်မာ</button>
-        <span style="color: #ccc;">)</span>
+      <div class="status-item">
+        <i class="fas fa-clock-rotate-left"></i> <span data-translate="historyCount">搜索历史</span>: <span id="historyCount">0</span>
       </div>
     </div>
     
-    <nav>
+    <div id="authPage" class="page-container active">
+        <h2><span data-translate="authTitle">用户认证</span></h2>
+        
+        <div class="form-group">
+          <label for="userEmail">
+            <i class="fas fa-envelope"></i> <span data-translate="emailLabel">邮箱</span>：
+          </label>
+          <input type="email" id="userEmail" placeholder="请输入邮箱" required />
+        </div>
+        
+        <div class="form-group">
+          <label for="userPassword">
+            <i class="fas fa-lock"></i> <span data-translate="passwordLabel">密码</span>：
+          </label>
+          <input type="password" id="userPassword" placeholder="请输入密码" required />
+        </div>
+        
+        <button id="signInBtn" class="btn">
+          <i class="fas fa-sign-in-alt"></i> <span data-translate="signInBtn">登录</span>
+        </button>
+        
+        <button id="signUpBtn" class="btn" style="background: var(--gray); margin-top: 10px;">
+          <i class="fas fa-user-plus"></i> <span data-translate="signUpBtn">注册</span>
+        </button>
+
+        <div class="user-info" id="userInfoDisplay" style="display:none;">
+            <span><i class="fas fa-user"></i> <span id="userEmailDisplay"></span></span>
+            <button id="signOutBtn" class="btn" style="width: auto; padding: 8px 15px; background: var(--error);">
+                <i class="fas fa-sign-out-alt"></i> <span data-translate="signOutBtn">退出</span>
+            </button>
+        </div>
+    </div>
+    
+    <nav id="mainNav" style="display: none;">
       <ul class="nav-list">
         <li class="nav-item">
           <a href="#" class="nav-link active" data-page="uploadPage">
@@ -532,7 +536,7 @@
       </ul>
     </nav>
     
-    <div id="uploadPage" class="page-container active">
+    <div id="uploadPage" class="page-container">
       <div class="page">
         <h2><span data-translate="uploadTitle">快递单号上传</span></h2>
         
@@ -540,7 +544,7 @@
           <label for="uploader">
             <i class="fas fa-location-dot"></i> <span data-translate="uploadLocation">上传地点</span>：
           </label>
-          <input type="text" id="uploader" data-translate-placeholder="uploaderPlaceholder" placeholder="请输入您的姓名或地点" required />
+          <input type="text" id="uploader" placeholder="请输入库地点" required />
         </div>
         
         <div class="form-group">
@@ -590,27 +594,26 @@ ZT1122334455"></textarea>
   </div>
 
   <script>
-    // ======================================================================
-    // ** 1. Supabase 配置 **
-    // 请将以下两个占位符替换为您在 Supabase 平台获取的实际值
-    const SUPABASE_URL = 'https://xxvzbkumuplydlretir.supabase.co'; // 替换为您的项目 URL
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiI...'; // 替换为您的 anon public key
-    const TABLE_NAME = 'tracking_records'; // 确保您的表名是这个
+    // -----------------------------------------------------------
+    // SUPABASE 配置 (已替换您的真实配置)
+    // -----------------------------------------------------------
+    const SUPABASE_URL = 'https://mjirgvgnglrffwavenysf.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qaXJndmdnbHJmZndhdmVueXNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1Nzc3MjEsImV4cCI6MjA3ODE1MzcyMX0.PNkKgv333cAhAClj3AtBlcPQkm1qp5RKm-KwhWc91L0';
     
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    // ======================================================================
-    
-    // 查9的语言翻译数据 (保持不变)
+    let currentUser = null;
+
+    // -----------------------------------------------------------
+    // 语言和翻译数据 (保持不变)
+    // -----------------------------------------------------------
     const translations = {
       cn: {
-        totalCount: "已存单号 (同步)", // 更改提示
+        totalCount: "已存单号",
         historyCount: "搜索历史",
-        currentLang: "",
         uploadNav: "单号上传",
         searchNav: "单号查询",
         uploadTitle: "快递单号上传",
         uploadLocation: "上传地点",
-        uploaderPlaceholder: "请输入您的姓名或地点", 
         trackingNumbers: "快递单号（每行一个）",
         trackingNumbersPlaceholder: "例如：\nSF1234567890\nYT9876543210\nZT1122334455",
         uploadBtn: "上传快递单号",
@@ -633,99 +636,85 @@ ZT1122334455"></textarea>
         recordNumber: "单号",
         recordLocation: "地点",
         recordTime: "上传时间",
-        exportBtn: "导出 Excel", 
-        exporting: "正在导出...", 
-        exportSuccess: "导出成功！", 
-        exportError: "导出失败！错误: ", 
-        saveError: "上传失败！\n\n【错误原因】：{error}\n\n请检查网络连接，或联系管理员。" // 更改提示
+        authTitle: "用户认证", // 新增
+        emailLabel: "邮箱",      // 新增
+        passwordLabel: "密码",    // 新增
+        signInBtn: "登录",       // 新增
+        signUpBtn: "注册",       // 新增
+        signOutBtn: "退出",      // 新增
+        userStatus: "状态",      // 新增
+        statusLoggedIn: "已登录", // 新增
+        statusLoggedOut: "未登录" // 新增
       },
       mm: {
-        totalCount: "သိမ်းထားသော ကုဒ်နံပါတ်များ (စည်းညှိခြင်း)", // 更改提示
+        totalCount: "သိမ်းဆည်းထားသော ကုဒ်နံပါတ်များ",
         historyCount: "ရှာဖွေမှု မှတ်တမ်း",
-        currentLang: "",
-        uploadNav: "ကုဒ် တင်ရန်",
-        searchNav: "ကုဒ် ရှာဖွေရန်",
-        uploadTitle: "ကုဒ် တင်ရန်",
+        uploadNav: "ကုဒ်နံပါတ် တင်ရန်",
+        searchNav: "ကုဒ်နံပါတ် ရှာဖွေရန်",
+        uploadTitle: "ကုဒ်နံပါတ် တင်ရန်",
         uploadLocation: "တင်သည့်နေရာ",
-        uploaderPlaceholder: "သင့်အမည် သို့မဟုတ် နေရာ ထည့်ပါ", 
         trackingNumbers: "ကုဒ်နံပါတ်များ (တစ်ကြောင်းတစ်ခု)",
         trackingNumbersPlaceholder: "ဥပမာ:\nSF1234567890\nYT9876543210\nZT1122334455",
-        uploadBtn: "ကုဒ် တင်ရန်",
-        searchTitle: "ကုဒ် ရှာရန်",
+        uploadBtn: "ကုဒ်နံပါတ် တင်ရန်",
+        searchTitle: "ကုဒ်နံပါတ် ရှာရန်",
         searchLabel: "အနည်းဆုံး နံပါတ် ၄ လုံးအထက် ထည့်ပါ (နောက်ဆုံးနံပါတ်)",
-        searchPlaceholder: "ဥပမာ: ****7890",
-        searchBtn: "ကုဒ် ရှာဖွေရန်",
+        searchPlaceholder: "ဥပမာ: 7890",
+        searchBtn: "ကုဒ်နံပါတ် ရှာဖွေရန်",
         recentSearches: "လတ်တလော ရှာဖွေမှုများ",
         clearHistory: "မှတ်တမ်း ရှင်းရန်",
         noResults: "မှတ်တမ်းမရှိပါ",
         noHistory: "ရှာဖွေမှု မှတ်တမ်း မရှိပါ",
-        saveSuccess: "အောင်မြင်ပါပြီ!",
-        saveSuccessWithDuplicates: "အောင်မြင်ပါပြီ! {count} မှတ်တမ်းအသစ် တင်ပြီး။\nအောက်ပါ ကုဒ်နံပါတ်များကို {uploader} မှ ယခင်တင်ပြီးဖြစ်ပါသည် - {duplicates}",
+        saveSuccess: "အောင်မြင်စွာ တင်ပြီးပါပြီ!",
+        saveSuccessWithDuplicates: "အောင်မြင်စွာ တင်ပြီးပါပြီ! {count} မှတ်တမ်းအသစ် တင်ပြီးပါပြီ။\nအောက်ပါ ကုဒ်နံပါတ်များကို {uploader} မှ ယခင်တင်ပြီးဖြစ်ပါသည် - {duplicates}",
         saveDuplicatesOnly: "တင်လိုက်သော ကုဒ်နံပါတ်အားလုံးကို {uploader} မှ ယခင်တင်ပြီးဖြစ်ပါသည် - {duplicates}",
-        fillRequired: "နေရာနှင့် ကုဒ်နံပါတ်များ ထည့်ပါ!",
+        fillRequired: "တင်သည့်နေရာနှင့် ကုဒ်နံပါတ်များ ထည့်ပါ!",
         minDigits: "အနည်းဆုံး နံပါတ် ၄ လုံး ထည့်ပါ!",
         clearConfirm: "ရှာဖွေမှု မှတ်တမ်းအားလုံးကို ရှင်းလိုပါသလား?",
         locationRequired: "တင်သည့်နေရာ ထည့်ပါ!",
         numbersRequired: "ကုဒ်နံပါတ်များ ထည့်ပါ!",
         recordNumber: "နံပါတ်",
         recordLocation: "နေရာ",
-        recordTime: "အချိန်",
-        exportBtn: "Excel ထုတ်ရန်", 
-        exporting: "ထုတ်ယူနေသည်...", 
-        exportSuccess: "ထုတ်ယူမှု အောင်မြင်ပါပြီ!", 
-        exportError: "ထုတ်ယူမှု မအောင်မြင်ပါ! အမှား:", 
-        saveError: "တင်ရန် မအောင်မြင်ပါ!\n\n【အမှားအယွင်း】: {error}\n\nကွန်ရက်ချိတ်ဆက်မှုကို စစ်ဆေးပါ၊ သို့မဟုတ် စီမံခန့်ခွဲသူကို ဆက်သွယ်ပါ။" // 更改提示
+        recordTime: "တင်ချိန်",
+        authTitle: "အသုံးပြုသူ အတည်ပြုချက်", // 新增
+        emailLabel: "အီးမေးလ်",    // 新增
+        passwordLabel: "စကားဝှက်",  // 新增
+        signInBtn: "၀င်ရန်",      // 新增
+        signUpBtn: "မှတ်ပုံတင်ရန်", // 新增
+        signOutBtn: "ထွက်ရန်",     // 新增
+        userStatus: "အခြေအနေ",    // 新增
+        statusLoggedIn: "ဝင်ပြီး",  // 新增
+        statusLoggedOut: "မဝင်ရသေး" // 新增
       }
     };
 
+    // 当前语言设置（默认为中文）
     let currentLang = 'cn';
     
-    // 获取翻译文本 (保持不变)
-    function t(key, params = {}) {
-      let text = translations[currentLang][key] || translations.cn[key] || key;
-      for (const [param, value] of Object.entries(params)) {
-        text = text.replace(`{${param}}`, value);
-      }
-      return text;
-    }
-
-    // --- 查9 UI/UX 逻辑 (页面切换, 语言切换, 历史记录) ---
-    // 页面切换功能 (保持不变)
-    document.querySelectorAll('.nav-link').forEach(link => {
-      link.addEventListener('click', function(e) {
-        e.preventDefault();
-        document.querySelectorAll('.nav-link').forEach(item => {
-          item.classList.remove('active');
-        });
-        this.classList.add('active');
-        const targetPage = this.getAttribute('data-page');
-        document.querySelectorAll('.page-container').forEach(page => {
-          page.classList.remove('active');
-        });
-        document.getElementById(targetPage).classList.add('active');
-        if (targetPage === 'searchPage') {
-          displaySearchHistory();
-        }
-      });
-    });
-
-    // 语言切换事件 (保持不变)
+    // 设置语言
     function setLanguage(lang) {
       currentLang = lang;
       localStorage.setItem('preferredLanguage', lang);
+      
+      // 更新语言按钮状态
       document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
       });
+      
+      // 翻译所有文本
       translatePage();
     }
     
+    // 翻译页面
     function translatePage() {
+      // 翻译带有 data-translate 属性的元素
       document.querySelectorAll('[data-translate]').forEach(el => {
         const key = el.getAttribute('data-translate');
         if (translations[currentLang][key]) {
           el.textContent = translations[currentLang][key];
         }
       });
+      
+      // 翻译占位符文本
       document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
         const key = el.getAttribute('data-translate-placeholder');
         if (translations[currentLang][key]) {
@@ -733,35 +722,216 @@ ZT1122334455"></textarea>
         }
       });
       
-      const exportBtnSpan = document.getElementById('exportExcelBtn')?.querySelector('span');
-      if (exportBtnSpan) {
-          exportBtnSpan.textContent = t('exportBtn');
+      // 更新搜索历史显示
+      displaySearchHistory();
+      updateAuthStatus(); // 更新认证状态文本
+    }
+    
+    // 获取翻译文本
+    function t(key, params = {}) {
+      let text = translations[currentLang][key] || translations.cn[key] || key;
+      
+      // 替换参数
+      for (const [param, value] of Object.entries(params)) {
+        text = text.replace(`{${param}}`, value);
       }
       
-      displaySearchHistory();
+      return text;
     }
 
-    // 搜索历史的本地存储 (保持不变，历史记录仍保存在本地)
-    function getSearchHistory() {
-      try {
-        const history = localStorage.getItem('searchHistory');
-        const records = history ? JSON.parse(history) : [];
-        return Array.isArray(records) ? records : [];
-      } catch (e) {
-        return [];
-      }
+    // -----------------------------------------------------------
+    // 认证状态管理 (新增/修改)
+    // -----------------------------------------------------------
+    function updateAuthStatus() {
+        const statusEl = document.getElementById('authStatus');
+        const emailDisplay = document.getElementById('userEmailDisplay');
+        const authContainer = document.getElementById('authPage');
+        const mainNav = document.getElementById('mainNav');
+        const uploadPage = document.getElementById('uploadPage');
+        const searchPage = document.getElementById('searchPage');
+        const infoDisplay = document.getElementById('userInfoDisplay');
+        
+        if (currentUser) {
+            statusEl.textContent = t('statusLoggedIn');
+            statusEl.style.color = var(--success);
+            emailDisplay.textContent = currentUser.email;
+            
+            // 显示用户邮箱和退出按钮，隐藏登录/注册表单
+            document.getElementById('userEmail').style.display = 'none';
+            document.getElementById('userPassword').style.display = 'none';
+            document.getElementById('signInBtn').style.display = 'none';
+            document.getElementById('signUpBtn').style.display = 'none';
+            infoDisplay.style.display = 'flex';
+            
+            mainNav.style.display = 'flex';
+            // 切换到上传页面（默认）
+            authContainer.classList.remove('active');
+            uploadPage.classList.add('active');
+            searchPage.classList.remove('active');
+            
+            // 登录后加载数据
+            updateCounters();
+            displaySearchHistory();
+
+        } else {
+            statusEl.textContent = t('statusLoggedOut');
+            statusEl.style.color = var(--error);
+            emailDisplay.textContent = '';
+            
+            // 隐藏用户邮箱和退出按钮，显示登录/注册表单
+            document.getElementById('userEmail').style.display = 'block';
+            document.getElementById('userPassword').style.display = 'block';
+            document.getElementById('signInBtn').style.display = 'block';
+            document.getElementById('signUpBtn').style.display = 'block';
+            infoDisplay.style.display = 'none';
+
+            mainNav.style.display = 'none';
+            // 切换回认证页面
+            authContainer.classList.add('active');
+            uploadPage.classList.remove('active');
+            searchPage.classList.remove('active');
+            
+            // 重置计数器
+            document.getElementById('totalCount').textContent = 0;
+            document.getElementById('historyCount').textContent = 0;
+        }
     }
 
-    function saveSearchHistory(history) {
-      localStorage.setItem('searchHistory', JSON.stringify(history));
+    // Supabase 认证监听
+    supabase.auth.onAuthStateChange((event, session) => {
+        currentUser = session ? session.user : null;
+        updateAuthStatus();
+    });
+
+    // 登录功能
+    document.getElementById('signInBtn').addEventListener('click', async () => {
+        const email = document.getElementById('userEmail').value;
+        const password = document.getElementById('userPassword').value;
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+        if (error) {
+            alert(`登录失败: ${error.message}`);
+        } else {
+            alert('登录成功！');
+        }
+    });
+
+    // 注册功能
+    document.getElementById('signUpBtn').addEventListener('click', async () => {
+        const email = document.getElementById('userEmail').value;
+        const password = document.getElementById('userPassword').value;
+        const { error } = await supabase.auth.signUp({ email, password });
+
+        if (error) {
+            alert(`注册失败: ${error.message}`);
+        } else {
+            alert('注册成功！请检查您的邮箱进行确认。');
+        }
+    });
+    
+    // 退出功能
+    document.getElementById('signOutBtn').addEventListener('click', async () => {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            alert(`退出失败: ${error.message}`);
+        } else {
+            alert('已成功退出。');
+        }
+    });
+
+    // -----------------------------------------------------------
+    // 页面切换功能 (修改)
+    // -----------------------------------------------------------
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // 检查是否登录
+        if (!currentUser) {
+            alert('请先登录才能进行操作！');
+            return;
+        }
+        
+        // 更新导航激活状态
+        document.querySelectorAll('.nav-link').forEach(item => {
+          item.classList.remove('active');
+        });
+        this.classList.add('active');
+        
+        // 切换页面
+        const targetPage = this.getAttribute('data-page');
+        document.querySelectorAll('.page-container').forEach(page => {
+          page.classList.remove('active');
+        });
+        document.getElementById(targetPage).classList.add('active');
+        document.getElementById('authPage').classList.remove('active'); // 隐藏认证页
+        
+        // 如果是查询页面，加载搜索历史
+        if (targetPage === 'searchPage') {
+          displaySearchHistory();
+        }
+      });
+    });
+
+
+    // -----------------------------------------------------------
+    // Supabase 数据操作 (替代 localStorage)
+    // -----------------------------------------------------------
+
+    // 从 Supabase 读取所有追踪记录
+    async function readData() {
+        if (!currentUser) return [];
+        const { data, error } = await supabase
+            .from('tracking_records')
+            .select('number, uploader, upload_time') // 只查询需要的字段
+            .order('upload_time', { ascending: false }); // 按时间倒序
+
+        if (error) {
+            console.error('读取数据失败:', error);
+            return [];
+        }
+        return data || [];
     }
 
-    function displaySearchHistory() {
-      const history = getSearchHistory();
+    // 从 Supabase 读取搜索历史
+    async function getSearchHistory() {
+        if (!currentUser) return [];
+        const { data, error } = await supabase
+            .from('search_history')
+            .select('term, time')
+            .order('time', { ascending: false }) // 按时间倒序
+            .limit(5); // 只取最新的 5 条
+
+        if (error) {
+            console.error('读取历史失败:', error);
+            return [];
+        }
+        return data || [];
+    }
+    
+    // 更新计数器
+    async function updateCounters() {
+        if (!currentUser) return;
+        
+        // 追踪记录计数
+        const { count: recordCount, error: recordError } = await supabase
+            .from('tracking_records')
+            .select('id', { count: 'exact', head: true });
+        
+        if (!recordError) {
+            document.getElementById('totalCount').textContent = recordCount;
+        }
+
+        // 搜索历史计数 (只计算最新的 5 条)
+        const historyData = await getSearchHistory();
+        document.getElementById('historyCount').textContent = historyData.length;
+    }
+
+    // 显示搜索历史
+    async function displaySearchHistory() {
+      const history = await getSearchHistory();
       const historyContainer = document.getElementById('searchHistory');
       historyContainer.innerHTML = '';
-      
-      document.getElementById('clearHistory').querySelector('span').textContent = t('clearHistory');
       
       if (history.length === 0) {
         historyContainer.innerHTML = `<p style="color:#78909c; text-align:center;">${t('noHistory')}</p>`;
@@ -771,103 +941,30 @@ ZT1122334455"></textarea>
       history.forEach(item => {
         const tag = document.createElement('div');
         tag.className = 'search-tag';
-        tag.innerHTML = `${item.term} <i class="fas fa-clock"></i> ${item.time}`;
+        // 注意：Supabase 返回的时间是 ISO 格式，这里简单处理
+        const displayTime = new Date(item.time).toLocaleTimeString();
+        tag.innerHTML = `${item.term} <i class="fas fa-clock"></i> ${displayTime}`;
+        
+        // 点击历史记录进行搜索
         tag.addEventListener('click', () => {
           document.getElementById('searchKey').value = item.term;
           document.getElementById('searchBtn').click();
         });
+        
         historyContainer.appendChild(tag);
       });
     }
 
-    // 清空搜索历史 (保持不变)
-    document.getElementById('clearHistory').addEventListener('click', function() {
-      if (confirm(t('clearConfirm'))) {
-        saveSearchHistory([]);
-        displaySearchHistory();
-      }
-    });
-
-    
-    // ======================================================================
-    // ** 2. 核心数据操作 (使用 Supabase API 重写)**
-    // ======================================================================
-
-    /**
-     * 【重写】从 Supabase 获取所有记录 (用于导出和总数)
-     */
-    async function getAllRecordsFromSupabase() {
-        const { data, error } = await supabase
-            .from(TABLE_NAME)
-            .select('number, uploader, upload_time') // 只查询需要的字段
-            .order('upload_time', { ascending: false }); // 按时间倒序
-
-        if (error) {
-            console.error('Supabase 查询所有记录失败:', error);
-            throw new Error(error.message);
-        }
-        return data || [];
-    }
-
-    /**
-     * 【重写】从 Supabase 搜索记录（使用 PostgreSQL 的 `LIKE` 或 `RLS`）
-     * 注意: Supabase 默认不支持直接的结尾匹配。我们用 `LIKE` 模糊查询，
-     * 但最好在 Supabase 数据库中添加索引以提高性能。
-     * @param {string} key 搜索关键词 (至少4位数字)
-     */
-    async function searchRecordsBySuffix(key) { 
-        // 使用 Postgres 的 LIKE 匹配结尾
-        const searchPattern = `%${key}`; 
-        
-        const { data, error } = await supabase
-            .from(TABLE_NAME)
-            // 使用 `ilike` 实现不区分大小写的 LIKE 匹配
-            .select('number, uploader, upload_time')
-            .ilike('number', searchPattern) 
-            .order('upload_time', { ascending: false }); 
-
-        if (error) {
-            console.error('Supabase 搜索记录失败:', error);
-            throw new Error(error.message);
-        }
-        
-        // 客户端过滤：为了确保完全是结尾匹配（以防 ilike 带来其他问题）
-        const results = (data || []).filter(record => 
-            record.number && String(record.number).endsWith(key)
-        );
-        
-        return results;
-    }
-    
-    /**
-     * 【重写】获取总记录数 (从 Supabase 获取)
-     */
-    async function getTotalCount() {
-        // 使用 count 方法，速度更快
-        const { count, error } = await supabase
-            .from(TABLE_NAME)
-            .select('*', { count: 'exact', head: true }); // 只返回计数，不返回数据
-
-        if (error) {
-            console.error('Supabase 获取总数失败:', error);
-            // 如果失败，返回 0，但不中断程序
-            return 0; 
-        }
-        return count || 0;
-    }
-
-    // 更新计数器
-    async function updateCounters() {
-      document.getElementById('totalCount').textContent = await getTotalCount();
-    }
-
-
-    // --- 核心上传功能 (重写为 Supabase) ---
+    // 添加上传功能 (修改为 Supabase 写入)
     document.getElementById('uploadBtn').addEventListener('click', async function(){
+      if (!currentUser) {
+        alert('请先登录才能上传！');
+        return;
+      }
+      
       const uploader = document.getElementById('uploader').value.trim();
       const text = document.getElementById('trackingNumbers').value.trim();
-      const uploadBtn = this;
-
+      
       if (!uploader) {
         alert(t('locationRequired'));
         return;
@@ -878,233 +975,186 @@ ZT1122334455"></textarea>
         return;
       }
       
+      // 按行分割，去除前后空格，过滤空行
       let numbers = text.split('\n').map(s => s.trim()).filter(s => s);
-      numbers = [...new Set(numbers)]; // 去除同一批内的重复
+      // 去除同一批内的重复
+      numbers = [...new Set(numbers)];
       
-      if (numbers.length === 0) {
-          alert(t('numbersRequired'));
+      // 1. 检查单号是否已存在
+      const { data: existingRecords, error: checkError } = await supabase
+          .from('tracking_records')
+          .select('number, uploader')
+          .in('number', numbers);
+
+      if (checkError) {
+          alert('检查重复失败: ' + checkError.message);
           return;
       }
 
-      uploadBtn.disabled = true;
-      uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在上传...';
-
-      let newCount = 0;
+      const existingNumbers = new Set(existingRecords.map(r => r.number));
+      const newRecordsToInsert = [];
       const duplicates = [];
-      const now = new Date().toLocaleString();
-      const recordsToInsert = [];
-
-      try {
-          // 1. 检查重复：先查询数据库中哪些单号已存在
-          const { data: existingRecords, error: selectError } = await supabase
-              .from(TABLE_NAME)
-              .select('number')
-              .in('number', numbers);
-
-          if (selectError) throw selectError;
-          
-          const existingNumbers = existingRecords.map(rec => rec.number); 
-
-          // 2. 准备新记录
-          for (const number of numbers) {
-              if (existingNumbers.includes(number)) {
-                  duplicates.push(number);
-                  continue;
-              }
-
-              recordsToInsert.push({
-                number: number,
-                uploader: uploader,
-                // Supabase (PostgreSQL) 建议使用 ISO 格式，但为了兼容旧代码我们继续使用 localestring
-                upload_time: now 
+      const now = new Date().toISOString(); // 使用 ISO 格式以便 Supabase 接受
+      
+      numbers.forEach(number => {
+          if (existingNumbers.has(number)) {
+              // 找到重复项的上传人
+              const dupe = existingRecords.find(r => r.number === number);
+              duplicates.push(`${number} (由 ${dupe.uploader} 上传)`);
+          } else {
+              newRecordsToInsert.push({
+                  number: number,
+                  uploader: uploader,
+                  upload_time: now
+                  // user_id 会由 RLS 策略自动设置
               });
           }
-          
-          // 3. 批量插入新记录到 Supabase
-          if (recordsToInsert.length > 0) {
-              const { error: insertError } = await supabase
-                  .from(TABLE_NAME)
-                  .insert(recordsToInsert);
+      });
+      
+      if (newRecordsToInsert.length > 0) {
+          // 2. 插入新记录
+          const { error: insertError } = await supabase
+              .from('tracking_records')
+              .insert(newRecordsToInsert);
 
-              if (insertError) throw insertError;
-              newCount = recordsToInsert.length;
+          if (insertError) {
+              alert('上传失败: ' + insertError.message);
+              return;
           }
-
-          // 4. 反馈结果
-          if (newCount > 0) {
-            // 查9的动画效果
-            uploadBtn.innerHTML = `<i class="fas fa-check"></i> ${t('saveSuccess')}`;
-            uploadBtn.style.animation = 'success 1.5s';
-            
-            setTimeout(() => {
-              uploadBtn.innerHTML = `<i class="fas fa-upload"></i> ${t('uploadBtn')}`;
-              uploadBtn.style.animation = '';
-            }, 2000);
-            
-            if (duplicates.length > 0) {
-                alert(t('saveSuccessWithDuplicates', {
-                    count: newCount,
-                    uploader: uploader,
-                    duplicates: duplicates.join(', ')
-                }));
-            } else {
-                alert(t('saveSuccess') + t('saveSuccessWithDuplicates', {count: newCount, uploader: uploader, duplicates: ""}).split('\n')[0]);
-            }
+          
+          // 插入成功后的通知和动画
+          const btn = this;
+          btn.innerHTML = `<i class="fas fa-check"></i> ${t('saveSuccess')}`;
+          btn.style.animation = 'success 1.5s';
+          
+          setTimeout(() => {
+              btn.innerHTML = `<i class="fas fa-upload"></i> ${t('uploadBtn')}`;
+              btn.style.animation = '';
+          }, 2000);
+          
+          if (duplicates.length > 0) {
+              alert(t('saveSuccessWithDuplicates', {
+                  count: newRecordsToInsert.length,
+                  uploader: uploader,
+                  duplicates: duplicates.join(', ')
+              }));
           } else {
-            alert(t('saveDuplicatesOnly', {
+              alert(t('saveSuccess'));
+          }
+      } else {
+          alert(t('saveDuplicatesOnly', {
               uploader: uploader,
               duplicates: duplicates.join(', ')
-            }));
-          }
-          
-          document.getElementById('trackingNumbers').value = '';
-          updateCounters(); // 更新总数
-
-      } catch (error) {
-        // 捕获 Supabase 错误
-        console.error('Supabase 上传失败:', error);
-        alert(t('saveError', { error: error.message || error.toString() })); 
-      
-      } finally {
-        uploadBtn.disabled = false;
-        if (!uploadBtn.style.animation) {
-             uploadBtn.innerHTML = `<i class="fas fa-upload"></i> ${t('uploadBtn')}`;
-        }
+          }));
       }
+      
+      // 清空表单并更新计数器
+      document.getElementById('trackingNumbers').value = '';
+      document.getElementById('uploader').value = '';
+      updateCounters();
     });
 
-    // --- 核心搜索功能 (使用 Supabase) ---
+    // 添加搜索功能 (修改为 Supabase 读取和写入历史)
     document.getElementById('searchBtn').addEventListener('click', async function(){
+      if (!currentUser) {
+        alert('请先登录才能搜索！');
+        return;
+      }
+      
       const key = document.getElementById('searchKey').value.trim();
-      const resultsDiv = document.getElementById('searchResults');
-      const searchBtn = this;
-      
-      resultsDiv.innerHTML = "";
-      
       if (key.length < 4) {
         alert(t('minDigits'));
         return;
       }
       
+      // 显示加载动画
       const loader = document.getElementById('searchLoader');
-      searchBtn.disabled = true;
-      searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在搜索...';
-      loader.style.display = 'block'; 
+      const resultsDiv = document.getElementById('searchResults');
+      loader.style.display = 'block';
+      resultsDiv.innerHTML = "";
+      
+      // 1. 从 Supabase 搜索 (使用 endsWith 模拟)
+      // 注意：PostgreSQL 中的 ILIKE 结合 % 符号可以实现结尾匹配
+      const searchTerm = `%${key}`;
+      
+      const { data: matched, error: searchError } = await supabase
+          .from('tracking_records')
+          .select('number, uploader, upload_time')
+          .ilike('number', searchTerm); // ILIKE 忽略大小写，%key 匹配结尾
+          
+      loader.style.display = 'none';
 
-      try {
-        const matched = await searchRecordsBySuffix(key); // 调用 Supabase 查询函数
-        
-        loader.style.display = 'none';
+      if (searchError) {
+          alert('搜索失败: ' + searchError.message);
+          console.error(searchError);
+          return;
+      }
+      
+      if (matched.length === 0) {
+        resultsDiv.innerHTML = `<div class="no-results">${t('noResults')}</div>`;
+      } else {
+        matched.forEach(rec => {
+          const div = document.createElement('div');
+          div.className = 'record';
+          const displayTime = new Date(rec.upload_time).toLocaleString();
+          div.innerHTML = `
+            <div><strong>${t('recordNumber')}：</strong>${rec.number}</div>
+            <div><strong>${t('recordLocation')}：</strong>${rec.uploader}</div>
+            <div><strong>${t('recordTime')}：</strong>${displayTime}</div>
+          `;
+          resultsDiv.appendChild(div);
+        });
+      }
+      
+      // 2. 保存搜索历史到 Supabase
+      const historyRecord = {
+          term: key,
+          time: new Date().toISOString() // user_id 由 RLS 策略自动设置
+      };
+      
+      const { error: historyError } = await supabase
+          .from('search_history')
+          .insert([historyRecord]);
+          
+      if (historyError) {
+          console.error('保存搜索历史失败:', historyError);
+      }
+      
+      // 重新显示搜索历史
+      displaySearchHistory();
+    });
 
-        if (matched.length === 0) {
-          resultsDiv.innerHTML = `<div class="no-results">${t('noResults')}</div>`;
+    // 清空搜索历史 (修改为 Supabase 删除)
+    document.getElementById('clearHistory').addEventListener('click', async function() {
+      if (!currentUser) {
+        alert('请先登录才能操作！');
+        return;
+      }
+      
+      if (confirm(t('clearConfirm'))) {
+        // 使用 delete() 删除所有当前用户的历史记录 (RLS 策略会确保只删除自己的)
+        const { error } = await supabase
+            .from('search_history')
+            .delete()
+            .neq('term', 'NEVER_MATCH'); // 欺骗语句，确保执行删除，但 RLS 才是真正的过滤器
+
+        if (error) {
+            alert('清空记录失败: ' + error.message);
+            console.error(error);
         } else {
-          matched.forEach(rec => {
-            const div = document.createElement('div');
-            div.className = 'record';
-            div.innerHTML = `
-              <div><strong>${t('recordNumber')}：</strong>${rec.number}</div>
-              <div><strong>${t('recordLocation')}：</strong>${rec.uploader}</div>
-              <div><strong>${t('recordTime')}：</strong>${rec.upload_time}</div> 
-            `;
-            resultsDiv.appendChild(div);
-          });
+            alert('搜索记录已清空。');
+            displaySearchHistory();
+            updateCounters();
         }
-        
-        // 保存搜索历史 (仍然保存在本地)
-        const history = getSearchHistory();
-        const now = new Date().toLocaleTimeString();
-        const existingIndex = history.findIndex(item => item.term === key);
-        if (existingIndex !== -1) {
-          history.splice(existingIndex, 1);
-        }
-        history.unshift({ term: key, time: now });
-        if (history.length > 5) { 
-          history.pop();
-        }
-        saveSearchHistory(history);
-        displaySearchHistory();
-
-      } catch (error) {
-        loader.style.display = 'none';
-        resultsDiv.innerHTML = `<div class="no-results" style="color: var(--error);">数据查询失败: ${error.message || error.toString()}</div>`;
-        console.error("Supabase 搜索错误:", error);
-      } finally {
-        searchBtn.disabled = false;
-        searchBtn.innerHTML = `<i class="fas fa-search"></i> ${t('searchBtn')}`;
       }
     });
 
-    // --- 核心导出功能 (使用 Supabase) ---
-    async function exportToCSV() {
-        const exportBtn = document.getElementById('exportExcelBtn');
-
-        exportBtn.disabled = true;
-        exportBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('exporting')}`;
-
-        try {
-            const allRecords = await getAllRecordsFromSupabase(); // 从 Supabase 获取
-            
-            if (allRecords.length === 0) {
-                alert(t('noResults'));
-                return;
-            }
-
-            // 1. 定义 CSV 表头 (使用当前的翻译)
-            const headers = [
-                t('recordNumber'), 
-                t('recordLocation'), 
-                t('recordTime')
-            ];
-            
-            // 2. 将数据转换为 CSV 格式
-            const csvRows = [];
-            csvRows.push(headers.join(',')); 
-            
-            allRecords.forEach(record => {
-                // CSV 转义函数
-                const escapeCsv = (str) => {
-                    const s = String(str || ''); 
-                    if (s.includes(',') || s.includes('\n') || s.includes('"')) {
-                        return `"${s.replace(/"/g, '""')}"`;
-                    }
-                    return s;
-                };
-                
-                const row = [
-                    escapeCsv(record.number),
-                    escapeCsv(record.uploader),
-                    escapeCsv(record.upload_time) // 注意：这里使用 Supabase 返回的字段名
-                ];
-                csvRows.push(row.join(','));
-            });
-
-            // 3. 创建 Blob 并下载 (保持不变)
-            const csvString = csvRows.join('\n');
-            const BOM = "\uFEFF"; 
-            const blob = new Blob([BOM + csvString], { type: 'text/csv;charset=utf-8;' });
-            
-            const a = document.createElement('a');
-            const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-            a.href = URL.createObjectURL(blob);
-            a.download = `${t('totalCount')}_records_${date}.csv`;
-            
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(a.href);
-            
-            alert(t('exportSuccess'));
-
-        } catch (error) {
-            console.error('导出失败:', error);
-            alert(t('exportError') + error.message);
-        } finally {
-            exportBtn.disabled = false;
-            exportBtn.innerHTML = `<i class="fas fa-file-excel"></i> <span data-translate="exportBtn">${t('exportBtn')}</span>`;
-        }
-    }
-
+    // 语言切换事件
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        setLanguage(this.getAttribute('data-lang'));
+      });
+    });
 
     // 初始化
     document.addEventListener('DOMContentLoaded', () => {
@@ -1112,18 +1162,7 @@ ZT1122334455"></textarea>
       const savedLang = localStorage.getItem('preferredLanguage') || 'cn';
       setLanguage(savedLang);
       
-      displaySearchHistory();
-      updateCounters(); // 首次加载时更新单号总数
-      
-      // 语言切换事件监听器
-      document.querySelectorAll('.lang-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-          setLanguage(this.getAttribute('data-lang'));
-        });
-      });
-      
-      // 导出按钮事件监听器
-      document.getElementById('exportExcelBtn').addEventListener('click', exportToCSV);
+      // 检查当前认证状态，由 onAuthStateChange 自动处理
     });
   </script>
 </body>
