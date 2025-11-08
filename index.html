@@ -514,7 +514,7 @@ ZT1122334455"></textarea>
     const SUPABASE_URL = 'https://YOUR_SUPABASE_URL.supabase.co'; // <-- 替换您的 URL
     const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // <-- 替换您的 Public Anon Key
     
-    // 直接创建 Supabase 客户端实例 (修复了 ReferenceError)
+    // 💥 修复 ReferenceError 的关键：创建 Supabase 客户端实例
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
     // -----------------------------------------------------------
@@ -619,7 +619,7 @@ ZT1122334455"></textarea>
     }
 
     // -----------------------------------------------------------
-    // 页面切换功能 (精简版本)
+    // 页面切换功能 
     // -----------------------------------------------------------
     document.querySelectorAll('.nav-link').forEach(link => {
       link.addEventListener('click', function(e) {
@@ -643,7 +643,7 @@ ZT1122334455"></textarea>
     });
 
     // -----------------------------------------------------------
-    // 搜索历史逻辑 (使用 localStorage)
+    // 搜索历史逻辑 (使用 localStorage) - 此部分仍使用 localStorage
     // -----------------------------------------------------------
     function getSearchHistory() {
       const history = localStorage.getItem('searchHistory');
@@ -687,7 +687,7 @@ ZT1122334455"></textarea>
     });
 
     // -----------------------------------------------------------
-    // Supabase 数据操作和计数器更新 
+    // Supabase 数据操作和计数器更新 (已更新为 Supabase 逻辑)
     // -----------------------------------------------------------
 
     async function getTotalCount() {
@@ -727,6 +727,7 @@ ZT1122334455"></textarea>
       numbers = [...new Set(numbers)]; // 去除同一批内的重复
       
       const now = new Date().toISOString();
+      // 注意：这里我们依靠 Supabase RLS 的 "Upsert" 行为来处理重复键（即 number 字段的唯一约束）
       const recordsToInsert = numbers.map(number => ({
         number,
         uploader,
@@ -736,19 +737,20 @@ ZT1122334455"></textarea>
       const uploadBtn = this;
       uploadBtn.disabled = true;
 
-      // 尝试插入所有记录
+      // 尝试插入所有记录，使用 onConflict 来优雅地处理重复单号
+      // 确保您的 number 字段在数据库中设置了 UNIQUE 约束
       const { data: insertedData, error: insertError } = await supabase
           .from('tracking_records')
           .insert(recordsToInsert)
+          .onConflict('number') 
           .select('number'); 
 
       uploadBtn.disabled = false;
 
       if (insertError) {
-          // 这里的报错通常是因为唯一性约束冲突或 RLS 权限问题
-          // 既然 RLS 已设为 public，多半是重复单号或数据库配置问题
           console.error('Insert Error:', insertError);
-          alert(`上传失败: ${insertError.message || '请检查单号是否已存在或数据库连接是否正确。'}`);
+          // 只有在 RLS 策略或数据库连接错误时才弹窗
+          alert(`上传失败: ${insertError.message || '请检查数据库设置和网络连接。'}`);
           return;
       }
 
@@ -768,7 +770,7 @@ ZT1122334455"></textarea>
           count: newCount
         }));
       } else {
-         // 如果 insertedData 为空，说明插入操作没有新增记录（可能全部被唯一性约束阻止）
+         // 如果 newCount 为 0，说明所有单号都因为唯一约束而被跳过
          alert(t('saveDuplicatesOnly'));
       }
       
@@ -791,11 +793,13 @@ ZT1122334455"></textarea>
       loader.style.display = 'block';
       resultsDiv.innerHTML = "";
       
-      // 使用 ILIKE 查询实现模糊匹配 (Public RLS 策略已允许)
+      // 使用 ILIKE 查询实现模糊匹配
       const { data: matched, error } = await supabase
         .from('tracking_records')
+        // 使用 ILIKE 配合 %${key} 即可实现结尾匹配或模糊匹配
         .select('number, uploader, upload_time')
-        .ilike('number', `%${key}`); 
+        .ilike('number', `%${key}`) 
+        .order('upload_time', { ascending: false }); // 按时间倒序
 
       loader.style.display = 'none';
       
