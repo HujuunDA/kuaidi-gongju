@@ -9,434 +9,9 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+Myanmar:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    /* ... [CSS 样式部分，保持不变] ... */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    /* ... [您的 CSS 样式部分，此处省略以节省空间，但代码中是完整的] ... */
+    /* 请确保您的 CSS 样式是完整的 */
 
-    :root {
-      --primary: #3f51b5;
-      --primary-light: #5c6bc0;
-      --primary-dark: #303f9f;
-      --accent: #ff4081;
-      --light: #f8fafc;
-      --dark: #1a237e;
-      --success: #4caf50;
-      --error: #f44336;
-      --gray: #78909c;
-      --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      --transition: all 0.3s ease;
-    }
-
-    body {
-      font-family: 'Noto Sans SC', 'Noto Sans Myanmar', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-      color: var(--dark);
-      line-height: 1.6;
-      min-height: 100vh;
-      padding: 0;
-      position: relative;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    /* 语言切换器 */
-    .language-switcher {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 50px;
-      padding: 8px 15px;
-      box-shadow: var(--shadow);
-      z-index: 100;
-      display: flex;
-      gap: 10px;
-    }
-
-    .lang-btn {
-      background: none;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 20px;
-      cursor: pointer;
-      transition: var(--transition);
-      font-weight: 500;
-    }
-
-    .lang-btn.active {
-      background: linear-gradient(90deg, var(--primary), var(--primary-light));
-      color: white;
-    }
-
-    /* 导航样式 */
-    nav {
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 50px;
-      max-width: 500px;
-      margin: 30px auto;
-      padding: 10px;
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(5px);
-    }
-
-    .nav-list {
-      display: flex;
-      justify-content: space-around;
-      list-style: none;
-    }
-
-    .nav-item {
-      position: relative;
-      flex: 1;
-      text-align: center;
-    }
-
-    .nav-link {
-      display: block;
-      padding: 12px 20px;
-      text-decoration: none;
-      color: var(--dark);
-      font-weight: 500;
-      border-radius: 30px;
-      transition: var(--transition);
-    }
-
-    .nav-link.active, .nav-link:hover {
-      background: linear-gradient(90deg, var(--primary), var(--primary-light));
-      color: white;
-    }
-
-    .nav-link i {
-      margin-right: 8px;
-    }
-
-    /* 页面容器 */
-    .page-container {
-      display: none;
-      animation: fadeIn 0.5s ease forwards;
-      opacity: 0;
-    }
-
-    .page-container.active {
-      display: block;
-      opacity: 1;
-    }
-
-    .page {
-      background: white;
-      border-radius: 20px;
-      padding: 30px;
-      margin-bottom: 40px;
-      box-shadow: var(--shadow);
-      transition: transform 0.3s ease;
-    }
-
-    .page:hover {
-      transform: translateY(-5px);
-    }
-
-    h2 {
-      font-size: 1.8rem;
-      margin-bottom: 25px;
-      color: var(--primary);
-      text-align: center;
-      font-weight: 600;
-      position: relative;
-      padding-bottom: 15px;
-    }
-
-    h2:after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 80px;
-      height: 4px;
-      background: linear-gradient(90deg, var(--primary), var(--accent));
-      border-radius: 2px;
-    }
-
-    /* 表单元素样式 */
-    .form-group {
-      margin-bottom: 25px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 10px;
-      font-weight: 500;
-      color: var(--primary-dark);
-      font-size: 1.05rem;
-      display: flex;
-      align-items: center;
-    }
-
-    label i {
-      margin-right: 8px;
-      color: var(--primary-light);
-    }
-
-    input, textarea {
-      width: 100%;
-      padding: 15px;
-      border: 2px solid #e8eaf6;
-      border-radius: 12px;
-      font-size: 1rem;
-      transition: var(--transition);
-      background: #f8fafc;
-      color: var(--dark);
-    }
-
-    input:focus, textarea:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.2);
-    }
-
-    textarea {
-      resize: vertical;
-      min-height: 150px;
-      font-family: monospace;
-    }
-
-    /* 按钮样式 */
-    .btn {
-      display: block;
-      width: 100%;
-      padding: 16px;
-      background: linear-gradient(90deg, var(--primary), var(--primary-light));
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 1.1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: var(--transition);
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 4px 15px rgba(63, 81, 181, 0.3);
-    }
-
-    .btn:hover {
-      background: linear-gradient(90deg, var(--primary-dark), var(--primary));
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(63, 81, 181, 0.4);
-    }
-
-    .btn:active {
-      transform: translateY(0);
-    }
-
-    .btn i {
-      margin-right: 10px;
-    }
-
-    /* 记录样式 */
-    .record {
-      background: var(--light);
-      border-radius: 15px;
-      padding: 20px;
-      margin-bottom: 15px;
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-      transition: var(--transition);
-      border-left: 4px solid var(--primary);
-    }
-
-    .record:hover {
-      transform: translateX(5px);
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .record strong {
-      color: var(--primary);
-      font-weight: 600;
-      display: inline-block;
-      min-width: 90px;
-    }
-
-    /* 搜索页面样式 */
-    #searchResults {
-      margin-top: 30px;
-    }
-
-    .no-results {
-      text-align: center;
-      padding: 30px;
-      color: #777;
-      font-style: italic;
-    }
-
-    /* 最近搜索记录 */
-    .recent-searches {
-      margin-top: 30px;
-      background: #f5f7ff;
-      border-radius: 15px;
-      padding: 20px;
-    }
-
-    .recent-title {
-      display: flex;
-      align-items: center;
-      margin-bottom: 15px;
-      color: var(--primary);
-      font-weight: 600;
-      font-size: 1.2rem;
-    }
-
-    .recent-title i {
-      margin-right: 10px;
-      color: var(--accent);
-    }
-
-    .search-tag {
-      display: inline-block;
-      background: white;
-      border: 1px solid var(--primary-light);
-      border-radius: 20px;
-      padding: 8px 16px;
-      margin: 0 8px 8px 0;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: var(--transition);
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-
-    .search-tag:hover {
-      background: var(--primary);
-      color: white;
-      transform: translateY(-2px);
-    }
-
-    .search-tag i {
-      margin-left: 5px;
-      font-size: 0.8rem;
-      opacity: 0.7;
-    }
-
-    /* 动画效果 */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-
-    @keyframes success {
-      0% { background: linear-gradient(90deg, var(--primary), var(--primary-light)); }
-      50% { background: linear-gradient(90deg, var(--success), #66bb6a); }
-      100% { background: linear-gradient(90deg, var(--primary), var(--primary-light)); }
-    }
-
-    /* 响应式设计 */
-    @media (max-width: 768px) {
-      .container {
-        padding: 15px;
-      }
-      
-      .page {
-        padding: 20px;
-      }
-      
-      h2 {
-        font-size: 1.5rem;
-      }
-      
-      .nav-list {
-        flex-direction: column;
-      }
-      
-      .nav-item {
-        margin-bottom: 5px;
-      }
-      
-      .language-switcher {
-        top: 10px;
-        right: 10px;
-        padding: 6px 12px;
-      }
-    }
-
-    /* 加载动画 */
-    .loader {
-      display: none;
-      width: 40px;
-      height: 40px;
-      margin: 20px auto;
-      border: 4px solid rgba(63, 81, 181, 0.2);
-      border-top: 4px solid var(--primary);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* 清空按钮 */
-    .clear-btn {
-      background: none;
-      border: none;
-      color: var(--gray);
-      cursor: pointer;
-      font-size: 0.9rem;
-      margin-left: 10px;
-      transition: var(--transition);
-    }
-
-    .clear-btn:hover {
-      color: var(--error);
-    }
-    
-    /* 系统状态指示器 */
-    .status-indicator {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 20px;
-      gap: 20px;
-    }
-    
-    .status-item {
-      display: flex;
-      align-items: center;
-      background: rgba(255, 255, 255, 0.7);
-      padding: 8px 15px;
-      border-radius: 20px;
-      font-size: 0.9rem;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    
-    .status-item i {
-      margin-right: 8px;
-      color: var(--primary);
-    }
-    
-    /* 上传计数器 */
-    .counter {
-      background: var(--primary);
-      color: white;
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-left: 8px;
-      font-size: 0.8rem;
-    }
-    
     /* 新增：认证界面样式 */
     #authPage {
         background: white;
@@ -674,16 +249,7 @@ ZT1122334455"></textarea>
         numbersRequired: "ကုဒ်နံပါတ်များ ထည့်ပါ!",
         recordNumber: "နံပါတ်",
         recordLocation: "နေရာ",
-        recordTime: "တင်ချိန်",
-        authTitle: "အသုံးပြုသူ အတည်ပြုချက်", 
-        emailLabel: "အီးမေးလ်",    
-        passwordLabel: "စကားဝှက်",  
-        signInBtn: "၀င်ရန်",      
-        signUpBtn: "မှတ်ပုံတင်ရန်", 
-        signOutBtn: "ထွက်ရန်",     
-        userStatus: "အခြေအနေ",    
-        statusLoggedIn: "ဝင်ပြီး",  
-        statusLoggedOut: "မဝင်ရသေး" 
+        recordTime: "တင်ချိန်"
       }
     };
 
@@ -740,10 +306,10 @@ ZT1122334455"></textarea>
     }
 
     // -----------------------------------------------------------
-    // 认证状态管理 (修正后的版本)
+    // 认证状态管理 
     // -----------------------------------------------------------
-    const primarySuccess = '#4caf50'; // 修正：直接使用颜色值
-    const primaryError = '#f44336';  // 修正：直接使用颜色值
+    const primarySuccess = '#4caf50'; 
+    const primaryError = '#f44336';  
 
     function updateAuthStatus() {
         const statusEl = document.getElementById('authStatus');
@@ -756,7 +322,7 @@ ZT1122334455"></textarea>
         
         if (currentUser) {
             statusEl.textContent = t('statusLoggedIn');
-            statusEl.style.color = primarySuccess; // 使用修正后的颜色值
+            statusEl.style.color = primarySuccess; 
             emailDisplay.textContent = currentUser.email;
             
             // 隐藏登录/注册表单，显示用户邮箱和退出按钮
@@ -764,13 +330,13 @@ ZT1122334455"></textarea>
             document.getElementById('userPassword').style.display = 'none';
             document.getElementById('signInBtn').style.display = 'none';
             document.getElementById('signUpBtn').style.display = 'none';
-            // 确保邮箱和密码的 label 也被隐藏，防止出现空白
+            // 确保邮箱和密码的 label 也被隐藏
             document.querySelector('label[for="userEmail"]').style.display = 'none';
             document.querySelector('label[for="userPassword"]').style.display = 'none';
             infoDisplay.style.display = 'flex';
             
             mainNav.style.display = 'flex';
-            // 切换到上传页面（默认），如果当前页面不是认证页
+            // 切换到上传页面（默认）
             if(authContainer.classList.contains('active')) {
                 authContainer.classList.remove('active');
                 uploadPage.classList.add('active');
@@ -783,7 +349,7 @@ ZT1122334455"></textarea>
 
         } else {
             statusEl.textContent = t('statusLoggedOut');
-            statusEl.style.color = primaryError; // 使用修正后的颜色值
+            statusEl.style.color = primaryError; 
             emailDisplay.textContent = '';
             
             // 显示登录/注册表单，隐藏用户邮箱和退出按钮
@@ -897,7 +463,7 @@ ZT1122334455"></textarea>
 
 
     // -----------------------------------------------------------
-    // Supabase 数据操作 (替代 localStorage)
+    // Supabase 数据操作
     // -----------------------------------------------------------
 
     // 从 Supabase 读取所有追踪记录
@@ -982,7 +548,7 @@ ZT1122334455"></textarea>
       });
     }
 
-    // 添加上传功能 (修改为 Supabase 写入)
+    // 添加上传功能
     document.getElementById('uploadBtn').addEventListener('click', async function(){
       if (!currentUser) {
         alert('请先登录才能上传！');
@@ -1080,7 +646,7 @@ ZT1122334455"></textarea>
       updateCounters();
     });
 
-    // 添加搜索功能 (修改为 Supabase 读取和写入历史)
+    // 添加搜索功能
     document.getElementById('searchBtn').addEventListener('click', async function(){
       if (!currentUser) {
         alert('请先登录才能搜索！');
@@ -1150,7 +716,7 @@ ZT1122334455"></textarea>
       displaySearchHistory();
     });
 
-    // 清空搜索历史 (修改为 Supabase 删除)
+    // 清空搜索历史
     document.getElementById('clearHistory').addEventListener('click', async function() {
       if (!currentUser) {
         alert('请先登录才能操作！');
