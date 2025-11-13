@@ -1,924 +1,978 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>快递单号管理</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+Myanmar:wght@400;700&display=swap" rel="stylesheet">
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高级采购管理 (Ks) - 云同步版</title>
+    <style>
+        /* 1. 全局和字体设置 (Clear and Minimal) */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            margin: 0;
+            background-color: #f7f7f7; /* 浅灰色背景 */
+            color: #1c1c1e; /* 深色文字 */
+        }
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 16px; /* 柔和的圆角 */
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); /* 极轻微的阴影 */
+            transition: box-shadow 0.3s;
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #3a3a3c;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        /* 2. Tab 切换样式 (Segmented Control Style) */
+        .tabs {
+            display: flex;
+            background-color: #f0f0f0; 
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 30px;
+        }
+        .tab-button {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: none;
+            background: none;
+            font-size: 15px;
+            font-weight: 600;
+            color: #8e8e93; 
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+        }
+        .tab-button.active {
+            background-color: #ffffff; 
+            color: #1c1c1e; 
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); 
+        }
+        .tab-content {
+            display: none;
+            padding: 10px 0;
+        }
+        .tab-content.active {
+            display: block;
+        }
 
-    :root {
-      --primary: #3f51b5;
-      --primary-light: #5c6bc0;
-      --primary-dark: #303f9f;
-      --accent: #ff4081;
-      --light: #f8fafc;
-      --dark: #1a237e;
-      --success: #4caf50;
-      --error: #f44336;
-      --gray: #78909c;
-      --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      --transition: all 0.3s ease;
-    }
+        /* 3. 下单页面 (选品) 样式 */
+        #product-list h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #5856d6; 
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e5e5ea;
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+        .product-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+            position: relative; 
+        }
+        .product-item input[type="checkbox"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #c7c7cc;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        .product-item input[type="checkbox"]:checked {
+            background-color: #007aff; 
+            border-color: #007aff;
+        }
+        .product-item input[type="checkbox"]:checked::before {
+            content: '✓';
+            color: white;
+            font-size: 14px;
+            line-height: 18px;
+            text-align: center;
+            display: block;
+        }
+        .product-item label {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+            font-size: 16px;
+            color: #1c1c1e;
+        }
+        
+        /* 编辑/删除按钮容器 */
+        .product-actions {
+            margin-left: 15px;
+            display: flex;
+            gap: 5px;
+        }
 
-    body {
-      font-family: 'Noto Sans SC', 'Noto Sans Myanmar', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-      color: var(--dark);
-      line-height: 1.6;
-      min-height: 100vh;
-      padding: 0;
-      position: relative;
-    }
+        .action-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 16px;
+            color: #8e8e93; 
+            transition: color 0.1s;
+        }
+        .action-button:hover {
+            color: #5856d6;
+        }
+        .delete-button:hover {
+            color: #ff3b30;
+        }
 
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 20px;
-    }
+        /* 结算和新增控件 */
+        .checkout-bar {
+            text-align: center;
+            margin-top: 40px;
+        }
+        .checkout-bar button {
+            background-color: #34c759; 
+            color: white;
+            border: none;
+            padding: 14px 40px;
+            font-size: 17px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(52, 199, 89, 0.3);
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+        .checkout-bar button:active {
+            background-color: #2eaf4c;
+            box-shadow: none;
+        }
+        
+        /* *** 样式修复：新增项输入框统一 *** */
+        .add-new-control {
+            display: flex; 
+            flex-wrap: nowrap; /* 确保不换行 */
+            gap: 8px; 
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f2f2f7; 
+            border-radius: 12px;
+            align-items: center;
+        }
+        .add-new-control input, .add-new-control select, .add-new-control button {
+            padding: 10px;
+            border: 1px solid #d1d1d6;
+            border-radius: 8px;
+            font-size: 15px;
+            box-sizing: border-box;
+            background-color: #ffffff; 
+            min-height: 40px; /* 统一高度 */
+        }
+        .add-new-control input {
+            flex-grow: 1;
+            -webkit-appearance: none; 
+            appearance: none;
+            min-width: 100px; /* 允许压缩 */
+            border: 1px solid #d1d1d6;
+        }
+        .add-new-control select {
+            width: 120px; /* 稍微缩小下拉框 */
+            flex-shrink: 0;
+            text-overflow: ellipsis; 
+            border: 1px solid #d1d1d6;
+        }
+        .add-new-control button {
+            width: 100px; /* 缩小按钮 */
+            background-color: #007aff; 
+            color: white;
+            border: none;
+            padding: 10px 0;
+            cursor: pointer;
+            flex-shrink: 0;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        /* *** 修复结束 *** */
 
-    /* 语言切换器 */
-    .language-switcher {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 50px;
-      padding: 8px 15px;
-      box-shadow: var(--shadow);
-      z-index: 100;
-      display: flex;
-      gap: 10px;
-    }
 
-    .lang-btn {
-      background: none;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 20px;
-      cursor: pointer;
-      transition: var(--transition);
-      font-weight: 500;
-    }
+        /* 4. 购物车/结算页面样式 (同上) */
+        #cart-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 15px;
+        }
+        #cart-table th, #cart-table td {
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e5ea;
+            text-align: left;
+        }
+        #cart-table th {
+            font-weight: 600;
+            color: #8e8e93;
+            background: none; 
+            border-bottom: 2px solid #d1d1d6;
+        }
+        
+        .cart-item-row.purchased td {
+            color: #aeaeb2; 
+            background-color: transparent;
+        }
+        .cart-item-row.purchased .item-name {
+            text-decoration: line-through;
+        }
 
-    .lang-btn.active {
-      background: linear-gradient(90deg, var(--primary), var(--primary-light));
-      color: white;
-    }
+        .price-input {
+            width: 130px; 
+            padding: 6px 8px;
+            border: 1px solid #d1d1d6;
+            border-radius: 6px;
+            text-align: right;
+            font-size: 15px;
+            background-color: #f9f9f9; 
+            -webkit-appearance: none; 
+            appearance: none;
+        }
+        
+        /* 总计显示 (Card Style) */
+        #cart-total-display {
+            font-size: 20px;
+            font-weight: 700;
+            margin-top: 30px;
+            padding: 15px 20px;
+            background-color: #e5e5ea; 
+            border-radius: 12px;
+            color: #3a3a3c;
+            text-align: right;
+            border: none;
+        }
+        
+        /* 拷贝按钮样式 */
+        .copy-button {
+            width: 100%;
+            background-color: #007aff; 
+            color: white;
+            border: none;
+            padding: 14px 0;
+            font-size: 17px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3);
+            margin-top: 20px;
+            margin-bottom: 10px;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+        .copy-button:active {
+            background-color: #005bb5;
+            box-shadow: none;
+        }
 
-    /* 导航样式 */
-    nav {
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 50px;
-      max-width: 500px;
-      margin: 30px auto;
-      padding: 10px;
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(5px);
-    }
-
-    .nav-list {
-      display: flex;
-      justify-content: space-around;
-      list-style: none;
-    }
-
-    .nav-item {
-      position: relative;
-      flex: 1;
-      text-align: center;
-    }
-
-    .nav-link {
-      display: block;
-      padding: 12px 20px;
-      text-decoration: none;
-      color: var(--dark);
-      font-weight: 500;
-      border-radius: 30px;
-      transition: var(--transition);
-    }
-
-    .nav-link.active, .nav-link:hover {
-      background: linear-gradient(90deg, var(--primary), var(--primary-light));
-      color: white;
-    }
-
-    .nav-link i {
-      margin-right: 8px;
-    }
-
-    /* 页面容器 */
-    .page-container {
-      display: none;
-      animation: fadeIn 0.5s ease forwards;
-      opacity: 0;
-    }
-
-    .page-container.active {
-      display: block;
-      opacity: 1;
-    }
-
-    .page {
-      background: white;
-      border-radius: 20px;
-      padding: 30px;
-      margin-bottom: 40px;
-      box-shadow: var(--shadow);
-      transition: transform 0.3s ease;
-    }
-
-    .page:hover {
-      transform: translateY(-5px);
-    }
-
-    h2 {
-      font-size: 1.8rem;
-      margin-bottom: 25px;
-      color: var(--primary);
-      text-align: center;
-      font-weight: 600;
-      position: relative;
-      padding-bottom: 15px;
-    }
-
-    h2:after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 80px;
-      height: 4px;
-      background: linear-gradient(90deg, var(--primary), var(--accent));
-      border-radius: 2px;
-    }
-
-    /* 表单元素样式 */
-    .form-group {
-      margin-bottom: 25px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 10px;
-      font-weight: 500;
-      color: var(--primary-dark);
-      font-size: 1.05rem;
-      display: flex;
-      align-items: center;
-    }
-
-    label i {
-      margin-right: 8px;
-      color: var(--primary-light);
-    }
-
-    input, textarea {
-      width: 100%;
-      padding: 15px;
-      border: 2px solid #e8eaf6;
-      border-radius: 12px;
-      font-size: 1rem;
-      transition: var(--transition);
-      background: #f8fafc;
-      color: var(--dark);
-    }
-
-    input:focus, textarea:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.2);
-    }
-
-    textarea {
-      resize: vertical;
-      min-height: 150px;
-      font-family: monospace;
-    }
-
-    /* 按钮样式 */
-    .btn {
-      display: block;
-      width: 100%;
-      padding: 16px;
-      background: linear-gradient(90deg, var(--primary), var(--primary-light));
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 1.1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: var(--transition);
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 4px 15px rgba(63, 81, 181, 0.3);
-    }
-
-    .btn:hover {
-      background: linear-gradient(90deg, var(--primary-dark), var(--primary));
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(63, 81, 181, 0.4);
-    }
-
-    .btn:active {
-      transform: translateY(0);
-    }
-
-    .btn i {
-      margin-right: 10px;
-    }
-
-    /* 记录样式 */
-    .record {
-      background: var(--light);
-      border-radius: 15px;
-      padding: 20px;
-      margin-bottom: 15px;
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-      transition: var(--transition);
-      border-left: 4px solid var(--primary);
-    }
-
-    .record:hover {
-      transform: translateX(5px);
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .record strong {
-      color: var(--primary);
-      font-weight: 600;
-      display: inline-block;
-      min-width: 90px;
-    }
-
-    /* 搜索页面样式 */
-    #searchResults {
-      margin-top: 30px;
-    }
-
-    .no-results {
-      text-align: center;
-      padding: 30px;
-      color: #777;
-      font-style: italic;
-    }
-
-    /* 最近搜索记录 */
-    .recent-searches {
-      margin-top: 30px;
-      background: #f5f7ff;
-      border-radius: 15px;
-      padding: 20px;
-    }
-
-    .recent-title {
-      display: flex;
-      align-items: center;
-      margin-bottom: 15px;
-      color: var(--primary);
-      font-weight: 600;
-      font-size: 1.2rem;
-    }
-
-    .recent-title i {
-      margin-right: 10px;
-      color: var(--accent);
-    }
-
-    .search-tag {
-      display: inline-block;
-      background: white;
-      border: 1px solid var(--primary-light);
-      border-radius: 20px;
-      padding: 8px 16px;
-      margin: 0 8px 8px 0;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: var(--transition);
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-
-    .search-tag:hover {
-      background: var(--primary);
-      color: white;
-      transform: translateY(-2px);
-    }
-
-    .search-tag i {
-      margin-left: 5px;
-      font-size: 0.8rem;
-      opacity: 0.7;
-    }
-
-    /* 动画效果 */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-
-    @keyframes success {
-      0% { background: linear-gradient(90deg, var(--primary), var(--primary-light)); }
-      50% { background: linear-gradient(90deg, var(--success), #66bb6a); }
-      100% { background: linear-gradient(90deg, var(--primary), var(--primary-light)); }
-    }
-
-    /* 响应式设计 */
-    @media (max-width: 768px) {
-      .container {
-        padding: 15px;
-      }
-      
-      .page {
-        padding: 20px;
-      }
-      
-      h2 {
-        font-size: 1.5rem;
-      }
-      
-      .nav-list {
-        flex-direction: column;
-      }
-      
-      .nav-item {
-        margin-bottom: 5px;
-      }
-      
-      .language-switcher {
-        top: 10px;
-        right: 10px;
-        padding: 6px 12px;
-      }
-    }
-
-    /* 加载动画 */
-    .loader {
-      display: none;
-      width: 40px;
-      height: 40px;
-      margin: 20px auto;
-      border: 4px solid rgba(63, 81, 181, 0.2);
-      border-top: 4px solid var(--primary);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* 清空按钮 */
-    .clear-btn {
-      background: none;
-      border: none;
-      color: var(--gray);
-      cursor: pointer;
-      font-size: 0.9rem;
-      margin-left: 10px;
-      transition: var(--transition);
-    }
-
-    .clear-btn:hover {
-      color: var(--error);
-    }
-    
-    /* 系统状态指示器 */
-    .status-indicator {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 20px;
-      gap: 20px;
-    }
-    
-    .status-item {
-      display: flex;
-      align-items: center;
-      background: rgba(255, 255, 255, 0.7);
-      padding: 8px 15px;
-      border-radius: 20px;
-      font-size: 0.9rem;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    
-    .status-item i {
-      margin-right: 8px;
-      color: var(--primary);
-    }
-    
-    /* 上传计数器 */
-    .counter {
-      background: var(--primary);
-      color: white;
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-left: 8px;
-      font-size: 0.8rem;
-    }
-  </style>
+        /* 红色按钮 (Destructive Action) */
+        .reset-button {
+            background-color: #ff3b30; 
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(255, 59, 48, 0.3);
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+        .reset-button:active {
+            background-color: #d82b2b;
+            box-shadow: none;
+        }
+        
+        /* 加载提示样式 */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            color: #007aff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: 600;
+            z-index: 1000;
+            transition: opacity 0.3s;
+        }
+    </style>
 </head>
 <body>
-  <div class="language-switcher">
-    <button class="lang-btn active" data-lang="cn">中文</button>
-    <button class="lang-btn" data-lang="mm">မြန်မာ</button>
-  </div>
 
-  <div class="container">
-    <div class="status-indicator">
-      <div class="status-item">
-        <i class="fas fa-box"></i> <span data-translate="totalCount">已存单号</span>: <span id="totalCount">0</span>
-      </div>
-      <div class="status-item">
-        <i class="fas fa-clock-rotate-left"></i> <span data-translate="historyCount">搜索历史</span>: <span id="historyCount">0</span>
-      </div>
-    </div>
-    
-    <nav>
-      <ul class="nav-list">
-        <li class="nav-item">
-          <a href="#" class="nav-link active" data-page="uploadPage">
-            <i class="fas fa-upload"></i> <span data-translate="uploadNav">单号上传</span>
-          </a>
-        </li>
-        <li class="nav-item">
-          <a href="#" class="nav-link" data-page="searchPage">
-            <i class="fas fa-search"></i> <span data-translate="searchNav">单号查询</span>
-          </a>
-        </li>
-      </ul>
-    </nav>
-    
-    <div id="uploadPage" class="page-container active">
-      <div class="page">
-        <h2><span data-translate="uploadTitle">快递单号上传</span></h2>
-        
-        <div class="form-group">
-          <label for="uploader">
-            <i class="fas fa-location-dot"></i> <span data-translate="uploadLocation">上传地点</span>：
-          </label>
-          <input type="text" id="uploader" placeholder="请输入库地点" required />
-        </div>
-        
-        <div class="form-group">
-          <label for="trackingNumbers">
-            <i class="fas fa-list-ol"></i> <span data-translate="trackingNumbers">快递单号（每行一个）</span>：
-          </label>
-          <textarea id="trackingNumbers" data-translate-placeholder="trackingNumbersPlaceholder" placeholder="例如：
-SF1234567890
-YT9876543210
-ZT1122334455"></textarea>
-        </div>
-        
-        <button id="uploadBtn" class="btn">
-          <i class="fas fa-upload"></i> <span data-translate="uploadBtn">上传快递单号</span>
-        </button>
-      </div>
-    </div>
-    
-    <div id="searchPage" class="page-container">
-      <div class="page">
-        <h2><span data-translate="searchTitle">快递单号查询</span></h2>
-        
-        <div class="form-group">
-          <label for="searchKey">
-            <i class="fas fa-keyboard"></i> <span data-translate="searchLabel">输入至少 4 位数字（结尾匹配）</span>：
-          </label>
-          <input type="text" id="searchKey" data-translate-placeholder="searchPlaceholder" placeholder="例如：7890" />
-        </div>
-        
-        <button id="searchBtn" class="btn">
-          <i class="fas fa-search"></i> <span data-translate="searchBtn">搜索快递单号</span>
-        </button>
-        
-        <div class="loader" id="searchLoader"></div>
-        
-        <div id="searchResults"></div>
-        
-        <div class="recent-searches">
-          <div class="recent-title">
-            <i class="fas fa-history"></i> <span data-translate="recentSearches">最近搜索记录</span>
-            <button class="clear-btn" id="clearHistory"><i class="fas fa-trash-can"></i> <span data-translate="clearHistory">清空记录</span></button>
-          </div>
-          <div id="searchHistory"></div>
-        </div>
-      </div>
-    </div>
-  </div>
+<div id="loading-overlay">
+    正在从云端加载采购清单... 🚀
+</div>
 
-  <script>
-    // *********************************************************************************
-    // *** JSONBin.io 云同步配置信息 (已为您配置 Master Key 和 Bin ID) ***
-    // *********************************************************************************
-    // ⚠️ 警告：Master Key 暴露在客户端代码中，存在安全风险，仅建议用于低敏感度的内部应用。
-    const JSONBIN_ID = '6914d01eae596e708f552007'; // 您的快递单号 Bin ID
-    const JSONBIN_MASTER_KEY = ''; // 您的 Master Key
-    const API_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_ID}`;
-    // *********************************************************************************
+<div class="container">
+    <h1>🛒 采购清单</h1>
 
-    // 语言翻译数据 (保持不变)
-    const translations = {
-      cn: {
-        totalCount: "已存单号",
-        historyCount: "搜索历史",
-        uploadNav: "单号上传",
-        searchNav: "单号查询",
-        uploadTitle: "快递单号上传",
-        uploadLocation: "上传地点",
-        trackingNumbers: "快递单号（每行一个）",
-        trackingNumbersPlaceholder: "例如：\nSF1234567890\nYT9876543210\nZT1122334455",
-        uploadBtn: "上传快递单号",
-        searchTitle: "快递单号查询",
-        searchLabel: "输入至少 4 位数字（结尾匹配）",
-        searchPlaceholder: "例如：7890",
-        searchBtn: "搜索快递单号",
-        recentSearches: "最近搜索记录",
-        clearHistory: "清空记录",
-        noResults: "没有找到匹配记录",
-        noHistory: "暂无搜索记录",
-        saveSuccess: "上传成功！",
-        saveSuccessWithDuplicates: "上传成功！新上传 {count} 条记录。\n以下单号已由 {uploader} 上传过，未重复上传：{duplicates}",
-        saveDuplicatesOnly: "所有上传的单号已由 {uploader} 上传过，无新记录上传：{duplicates}",
-        fillRequired: "请填写上传地点和快递单号！",
-        minDigits: "请输入至少 4 位数字！",
-        clearConfirm: "确定要清空所有搜索记录吗？",
-        locationRequired: "请填写上传地点！",
-        numbersRequired: "请填写快递单号！",
-        recordNumber: "单号",
-        recordLocation: "地点",
-        recordTime: "上传时间",
-        loadError: "无法从云端加载数据，请检查配置或网络！",
-        saveError: "数据上传失败，请检查配置或网络！"
-      },
-      mm: {
-        totalCount: "သိမ်းဆည်းထားသော ကုဒ်နံပါတ်များ",
-        historyCount: "ရှာဖွေမှု မှတ်တမ်း",
-        uploadNav: "ကုဒ်နံပါတ် တင်ရန်",
-        searchNav: "ကုဒ်နံပါတ် ရှာဖွေရန်",
-        uploadTitle: "ကုဒ်နံပါတ် တင်ရန်",
-        uploadLocation: "တင်သည့်နေရာ",
-        trackingNumbers: "ကုဒ်နံပါတ်များ (တစ်ကြောင်းတစ်ခု)",
-        trackingNumbersPlaceholder: "ဥပမာ:\nSF1234567890\nYT9876543210\nZT1122334455",
-        uploadBtn: "ကုဒ်နံပါတ် တင်ရန်",
-        searchTitle: "ကုဒ်နံပါတ် ရှာရန်",
-        searchLabel: "အနည်းဆုံး နံပါတ် ၄ လုံးအထက် ထည့်ပါ (နောက်ဆုံးနံပါတ်)",
-        searchPlaceholder: "ဥပမာ: 7890",
-        searchBtn: "ကုဒ်နံပါတ် ရှာဖွေရန်",
-        recentSearches: "လတ်တလော ရှာဖွေမှုများ",
-        clearHistory: "မှတ်တမ်း ရှင်းရန်",
-        noResults: "မှတ်တမ်းမရှိပါ",
-        noHistory: "ရှာဖွေမှု မှတ်တမ်း မရှိပါ",
-        saveSuccess: "အောင်မြင်စွာ တင်ပြီးပါပြီ!",
-        saveSuccessWithDuplicates: "အောင်မြင်စွာ တင်ပြီးပါပြီ! {count} မှတ်တမ်းအသစ် တင်ပြီးပါပြီ။\nအောက်ပါ ကုဒ်နံပါတ်များကို {uploader} မှ ယခင်တင်ပြီးဖြစ်ပါသည် - {duplicates}",
-        saveDuplicatesOnly: "တင်လိုက်သော ကုဒ်နံပါတ်အားလုံးကို {uploader} မှ ယခင်တင်ပြီးဖြစ်ပါသည် - {duplicates}",
-        fillRequired: "တင်သည့်နေရာနှင့် ကုဒ်နံပါတ်များ ထည့်ပါ!",
-        minDigits: "အနည်းဆုံး နံပါတ် ၄ လုံး ထည့်ပါ!",
-        clearConfirm: "ရှာဖွေမှု မှတ်တမ်းအားလုံးကို ရှင်းလိုပါသလား?",
-        locationRequired: "တင်သည့်နေရာ ထည့်ပါ!",
-        numbersRequired: "ကုဒ်နံပါတ်များ ထည့်ပါ!",
-        recordNumber: "နံပါတ်",
-        recordLocation: "နေရာ",
-        recordTime: "တင်ချိန်",
-        loadError: "无法从云端加载数据，请检查配置或网络！",
-        saveError: "数据上传失败，请检查配置或网络！"
-      }
+    <div class="tabs" id="tab-controls">
+        <button class="tab-button active" data-tab="product-tab" onclick="openTab(event, 'product-tab')">🛍️ 选品清单</button>
+        <button class="tab-button" data-tab="cart-tab" onclick="openTab(event, 'cart-tab')">📋 结算购物车</button>
+    </div>
+
+    <div id="product-tab" class="tab-content active">
+        <div id="product-list">
+            </div>
+        
+        <div class="checkout-bar">
+            <button onclick="addSelectedToCart()">✅ 加入购物车并前往结算</button>
+        </div>
+        
+        <div class="add-new-control">
+            <input type="text" id="new-product-input" placeholder="添加新的采购项到清单"> 
+            <select id="new-product-category">
+                </select>
+            <button class="add-to-list-button" onclick="addNewProductToList()">添加到清单</button>
+        </div>
+    </div>
+
+    <div id="cart-tab" class="tab-content">
+        <table id="cart-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">✓</th>
+                    <th style="width: 65%;">采购品项</th>
+                    <th style="width: 30%; text-align: right;">价格</th>
+                </tr>
+            </thead>
+            <tbody id="cart-table-body">
+                </tbody>
+        </table>
+
+        <div id="cart-total-display">
+            总支出: Ks 0
+        </div>
+        
+        <button class="copy-button" onclick="copyCartSummary()">📋 拷贝采购清单与总支出</button>
+
+        <button class="reset-button" onclick="resetCart()">清空已完成项目</button>
+    </div>
+</div>
+
+<script>
+    // *********************************************************************************
+    // *** 核心配置信息 - 【已替换为您新账户的实际信息！】 ***
+    // *********************************************************************************
+    const JSONBIN_ID = '69158efd43b1c97be9aaa457'; // ✅ 您的新 Bin ID
+    const JSONBIN_MASTER_KEY = '$2a$10$sDEJmJM09AqeDdTs7fLnCuerS4mWPFepEeFhDn9gNaT86Lwf2cUXu'; // ✅ 您的新 Master Key
+    const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_ID}`;
+    
+    // --- 性能优化：缓存 DOM 引用 ---
+    const DOM = {
+        productList: document.getElementById('product-list'),
+        newProductCategory: document.getElementById('new-product-category'),
+        newProductInput: document.getElementById('new-product-input'),
+        cartTableBody: document.getElementById('cart-table-body'),
+        cartTotalDisplay: document.getElementById('cart-total-display'),
+        loadingOverlay: document.getElementById('loading-overlay'),
     };
 
-    let currentLang = 'cn';
-    // 全局存储从云端加载的记录
-    let currentRecords = [];
+    // --- 货币符号常量 ---
+    const CURRENCY_SYMBOL = 'Ks'; 
+    const CURRENCY_SUFFIX = ` ${CURRENCY_SYMBOL}`; 
     
-    // --- JSONBin.io API Functions ---
+    const formatter = new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 0, 
+        maximumFractionDigits: 0
+    });
+    
+    // 核心数据结构
+    let cloudData = {
+        productTemplate: {}, // 主清单
+        cartData: []         // 购物车数据
+    };
+    
+    let grandTotalCost = 0; 
 
-    // 异步：从云端加载数据
-    async function loadDataFromCloud() {
+    // --- 智能分类关键字映射 (保持不变) ---
+    const KEYWORD_MAP = {
+        '鸡': '肉类/海鲜 🦞🥩', '牛': '肉类/海鲜 🦞🥩', '猪': '肉类/海鲜 🦞🥩',
+        '羊': '肉类/海鲜 🦞🥩', '鱼': '肉类/海鲜 🦞🥩', '虾': '肉类/海鲜 🦞🥩',
+        '海鲜': '肉类/海鲜 🦞🥩', '肉': '肉类/海鲜 🦞🥩',
+        '菜': '蔬菜 🥬', '菇': '蔬菜 🥬', '果': '蔬菜 🥬', '豆': '蔬菜 🥬', '椒': '蔬菜 🥬',
+        '料': '调料/酱料 🧂🧄', '酱': '调料/酱料 🧂🧄', '醋': '调料/酱料 🧂🧄',
+        '油': '调料/酱料 🧂🧄', '葱': '调料/酱料 🧂🧄', '蒜': '调料/酱料 🧂🧄',
+        '盐': '调料/酱料 🧂🧄', '姜': '调料/酱料 🧂🧄',
+    };
+
+    // --- 实用工具函数 (保持不变) ---
+    function parseFormattedPrice(formattedString) {
+        if (!formattedString) return '';
+        // 移除所有非数字字符，但保留英文句号（如果需要小数）
+        const cleanedString = String(formattedString).replace(/[^0-9.]/g, ''); 
+        return parseFloat(cleanedString) || '';
+    }
+
+    function formatPrice(number) {
+        const num = parseFloat(number);
+        if (isNaN(num) || num === 0) return '';
+        return formatter.format(num) + CURRENCY_SUFFIX;
+    }
+    
+    function getCategoryByKeyword(itemName) {
+        for (const keyword in KEYWORD_MAP) {
+            if (itemName.includes(keyword)) {
+                return KEYWORD_MAP[keyword];
+            }
+        }
+        return null; 
+    }
+
+    function sortCategory(categoryKey) {
+        if (cloudData.productTemplate[categoryKey]) {
+            cloudData.productTemplate[categoryKey].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+        }
+    }
+    
+    function populateCategorySelect() {
+        let optionsHtml = '';
+        // 确保至少有一个默认分类，以防模板为空
+        if (Object.keys(cloudData.productTemplate).length === 0) {
+             optionsHtml += `<option value="默认分类">默认分类</option>`;
+             cloudData.productTemplate["默认分类"] = [];
+        } else {
+             for (const category in cloudData.productTemplate) {
+                 optionsHtml += `<option value="${category}">${category}</option>`;
+             }
+        }
+        
+        DOM.newProductCategory.innerHTML = optionsHtml;
+        if (DOM.newProductCategory.options.length > 0) {
+            DOM.newProductCategory.selectedIndex = 0;
+        }
+    }
+
+    // --- 云同步函数 ---
+    
+    async function loadProductsFromCloud() {
+        if (!JSONBIN_ID || !JSONBIN_MASTER_KEY) {
+             cloudData = { productTemplate: {"默认分类": ["示例商品"]}, cartData: [] };
+             DOM.loadingOverlay.textContent = "❗ 错误：请检查代码中的 Master Key 或 Bin ID。";
+             
+             for (const category in cloudData.productTemplate) {
+                sortCategory(category);
+            }
+            renderProductList();
+            populateCategorySelect(); 
+            renderCart(); 
+            
+            const savedTab = sessionStorage.getItem('activeTab') || 'product-tab';
+            openTab(null, savedTab);
+
+            DOM.loadingOverlay.style.opacity = '0';
+            setTimeout(() => DOM.loadingOverlay.style.display = 'none', 300);
+            return;
+        }
+
         try {
-            const response = await fetch(API_URL, {
+            const response = await fetch(JSONBIN_URL, {
                 method: 'GET',
                 headers: {
-                    'X-Master-Key': JSONBIN_MASTER_KEY
+                    'X-Master-Key': JSONBIN_MASTER_KEY 
                 }
             });
-            const data = await response.json();
-            // JSONBin 将数据包裹在 'record' 对象中，如果 Bin 为空，则返回空对象 {}，所以我们取 record 或空数组 []
-            return data.record && Array.isArray(data.record) ? data.record : []; 
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}. 请检查 Bin ID 和 Master Key。`);
+            }
+
+            const json = await response.json();
+            
+            if (json && json.record && json.record.productTemplate && Array.isArray(json.record.cartData)) {
+                cloudData.productTemplate = json.record.productTemplate;
+                cloudData.cartData = json.record.cartData;
+            } else if (json && json.record && typeof json.record === 'object') {
+                // 如果 Bin 首次创建为空，或只包含初始 JSON，我们确保结构正确
+                if (!json.record.productTemplate) {
+                     cloudData.productTemplate = {"默认分类": []};
+                } else {
+                    cloudData.productTemplate = json.record.productTemplate;
+                }
+                if (!json.record.cartData) {
+                    cloudData.cartData = [];
+                } else {
+                    cloudData.cartData = json.record.cartData;
+                }
+            } else {
+                // 如果云端数据为空，初始化一个默认结构
+                cloudData.productTemplate = {"默认分类": []};
+                cloudData.cartData = [];
+            }
         } catch (error) {
-            console.error("Error loading data from JSONBin:", error);
-            // 只有在加载失败时才弹窗提示，不影响程序运行
-            // alert(t('loadError')); 
-            return [];
+            console.error('加载云端数据失败:', error);
+            DOM.loadingOverlay.textContent = `❌ 加载失败，请检查配置或 Bin 权限。详情: ${error.message}`;
+            alert("加载云端数据失败！请检查 JSONBin 配置是否正确，特别是 Bin ID 和 Master Key。");
+        } finally {
+            for (const category in cloudData.productTemplate) {
+                sortCategory(category);
+            }
+            renderProductList();
+            populateCategorySelect(); 
+            renderCart(); 
+            
+            const savedTab = sessionStorage.getItem('activeTab') || 'product-tab';
+            openTab(null, savedTab);
+
+            DOM.loadingOverlay.style.opacity = '0';
+            setTimeout(() => DOM.loadingOverlay.style.display = 'none', 300);
         }
     }
 
-    // 异步：更新/覆盖整个 Bin 内容
-    async function updateDataOnCloud(data) {
+    async function saveProductsToCloud() {
+        if (!JSONBIN_ID || !JSONBIN_MASTER_KEY) {
+            alert("❗ 警告：Master Key 或 Bin ID 缺失，数据无法上传！");
+            return;
+        }
+        
+        const dataToSave = cloudData; 
+
         try {
-            const response = await fetch(API_URL, {
-                method: 'PUT', // PUT 方法用于完全覆盖数据
+            const response = await fetch(JSONBIN_URL, {
+                method: 'PUT', 
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Master-Key': JSONBIN_MASTER_KEY
+                    'X-Master-Key': JSONBIN_MASTER_KEY, 
+                    'X-Bin-Versioning': 'false' 
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify(dataToSave)
             });
-            
-            if (response.ok) {
-                return true;
-            } else {
-                console.error("Error updating data on JSONBin:", await response.text());
-                alert(t('saveError'));
-                return false;
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
         } catch (error) {
-            console.error("Error updating data on JSONBin:", error);
-            alert(t('saveError'));
-            return false;
+            console.error('保存云端数据失败:', error);
+            alert("警告：数据保存到云端失败！请检查网络连接或 Master Key 是否有写入权限。");
         }
     }
     
-    // --- 语言和 UI Functions ---
+    // --- 初始化和加载 ---
 
-    function setLanguage(lang) {
-      currentLang = lang;
-      localStorage.setItem('preferredLanguage', lang);
-      document.querySelectorAll('.lang-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
-      });
-      translatePage();
-    }
-    
-    function translatePage() {
-      document.querySelectorAll('[data-translate]').forEach(el => {
-        const key = el.getAttribute('data-translate');
-        if (translations[currentLang][key]) {
-          el.textContent = translations[currentLang][key];
-        }
-      });
-      document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
-        const key = el.getAttribute('data-translate-placeholder');
-        if (translations[currentLang][key]) {
-          el.placeholder = translations[currentLang][key];
-        }
-      });
-      displaySearchHistory();
-    }
-    
-    function t(key, params = {}) {
-      let text = translations[currentLang][key] || translations.cn[key] || key;
-      for (const [param, value] of Object.entries(params)) {
-        text = text.replace(`{${param}}`, value);
-      }
-      return text;
-    }
-
-    document.querySelectorAll('.nav-link').forEach(link => {
-      link.addEventListener('click', function(e) {
-        e.preventDefault();
-        document.querySelectorAll('.nav-link').forEach(item => {
-          item.classList.remove('active');
-        });
-        this.classList.add('active');
-        const targetPage = this.getAttribute('data-page');
-        document.querySelectorAll('.page-container').forEach(page => {
-          page.classList.remove('active');
-        });
-        document.getElementById(targetPage).classList.add('active');
-        if (targetPage === 'searchPage') {
-          displaySearchHistory();
-        }
-      });
+    document.addEventListener('DOMContentLoaded', () => {
+        loadProductsFromCloud(); 
     });
 
-    // 从 localStorage 中读取搜索历史 (此部分仍使用 localStorage，因为它是个性化、非核心数据)
-    function getSearchHistory() {
-      const history = localStorage.getItem('searchHistory');
-      return history ? JSON.parse(history) : [];
-    }
-
-    // 保存搜索历史
-    function saveSearchHistory(history) {
-      localStorage.setItem('searchHistory', JSON.stringify(history));
-      updateCounters();
-    }
-
-    function displaySearchHistory() {
-      const history = getSearchHistory();
-      const historyContainer = document.getElementById('searchHistory');
-      historyContainer.innerHTML = '';
-      
-      if (history.length === 0) {
-        historyContainer.innerHTML = `<p style="color:#78909c; text-align:center;">${t('noHistory')}</p>`;
-        return;
-      }
-      
-      history.forEach(item => {
-        const tag = document.createElement('div');
-        tag.className = 'search-tag';
-        tag.innerHTML = `${item.term} <i class="fas fa-clock"></i> ${item.time}`;
+    function openTab(evt, tabName) {
+        sessionStorage.setItem('activeTab', tabName);
         
-        tag.addEventListener('click', () => {
-          document.getElementById('searchKey').value = item.term;
-          document.getElementById('searchBtn').click();
-        });
-        historyContainer.appendChild(tag);
-      });
-    }
-
-    // 更新计数器 (现在依赖全局 currentRecords 的长度)
-    function updateCounters() {
-      document.getElementById('totalCount').textContent = currentRecords ? currentRecords.length : 0;
-      document.getElementById('historyCount').textContent = getSearchHistory().length;
+        let tabcontent = document.getElementsByClassName("tab-content");
+        for (let i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].classList.remove("active");
+            tabcontent[i].style.display = "none";
+        }
+        
+        let tablinks = document.getElementsByClassName("tab-button");
+        for (let i = 0; i < tablinks.length; i++) {
+            tablinks[i].classList.remove("active");
+        }
+        
+        document.getElementById(tabName).classList.add("active");
+        document.getElementById(tabName).style.display = "block";
+        if (evt) {
+            evt.currentTarget.classList.add("active");
+        } else {
+            const initialTabButton = document.querySelector(`.tab-button[data-tab="${tabName}"]`);
+            if (initialTabButton) initialTabButton.classList.add("active");
+        }
+        
+        if (tabName === 'cart-tab') {
+            renderCart(); 
+        }
     }
     
-    // 首次加载数据并更新计数器 (异步)
-    async function loadAndDisplayData() {
-        currentRecords = await loadDataFromCloud();
-        updateCounters();
-    }
+    // --- 1. 下单页面逻辑 (选品) ---
 
-    // --- 核心上传功能 (修改为异步和云操作) ---
-    document.getElementById('uploadBtn').addEventListener('click', async function(){
-      const uploader = document.getElementById('uploader').value.trim();
-      const text = document.getElementById('trackingNumbers').value.trim();
-      
-      if (!uploader) {
-        alert(t('locationRequired'));
-        return;
-      }
-      
-      if (!text) {
-        alert(t('numbersRequired'));
-        return;
-      }
-      
-      let numbers = text.split('\n').map(s => s.trim()).filter(s => s);
-      numbers = [...new Set(numbers)];
-      
-      // 1. 从云端加载最新记录 (确保基于最新的云数据进行合并)
-      const records = await loadDataFromCloud();
-      const now = new Date().toLocaleString();
-      const newRecords = [];
-      const duplicates = [];
-      
-      numbers.forEach(number => {
-        // 检查是否已有该单号的记录
-        if (records.some(rec => rec.number === number)) {
-          duplicates.push(number);
-        } else {
-          newRecords.push({
-            number,
-            uploader,
-            uploadTime: now
-          });
-        }
-      });
-      
-      if (newRecords.length > 0) {
-        const updatedRecords = records.concat(newRecords);
+    function renderProductList() {
+        let listHtml = '';
         
-        // 2. 将合并后的新记录上传到云端 (覆盖整个 Bin)
-        const btn = this;
-        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 正在上传...`;
+        const cartItemNames = new Set(cloudData.cartData.map(item => item.name));
         
-        const success = await updateDataOnCloud(updatedRecords);
+        for (const category in cloudData.productTemplate) {
+            sortCategory(category); 
+            
+            listHtml += `<h2>${category}</h2>`;
 
-        if (success) {
-            currentRecords = updatedRecords; // 更新全局数据
-            updateCounters();
-            
-            btn.innerHTML = `<i class="fas fa-check"></i> ${t('saveSuccess')}`;
-            btn.style.animation = 'success 1.5s';
-            
-            setTimeout(() => {
-                btn.innerHTML = `<i class="fas fa-upload"></i> ${t('uploadBtn')}`;
-                btn.style.animation = '';
-            }, 2000);
-            
-            if (duplicates.length > 0) {
-              alert(t('saveSuccessWithDuplicates', {
-                count: newRecords.length,
-                uploader: uploader,
-                duplicates: duplicates.join(', ')
-              }));
-            } else {
-              alert(t('saveSuccess', {count: newRecords.length}));
+            const items = cloudData.productTemplate[category];
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                const uniqueId = `${category}-${item}`;
+                
+                const escapedCategory = category.replace(/'/g, "\\'");
+                const escapedItem = item.replace(/'/g, "\\'");
+
+                // 如果项目在购物车中，则自动勾选
+                const isChecked = cartItemNames.has(item) ? 'checked' : '';
+
+                listHtml += `
+                    <div class="product-item">
+                        <input type="checkbox" id="item-${uniqueId}" data-item-name="${item}" ${isChecked}>
+                        <label for="item-${uniqueId}" style="flex-grow:1; cursor:pointer;">${item}</label>
+                        <div class="product-actions">
+                            <button class="action-button edit-button" 
+                                    onclick="editProduct('${escapedCategory}', '${escapedItem}')">
+                                ✏️
+                            </button>
+                            <button class="action-button delete-button" 
+                                    onclick="deleteProduct('${escapedCategory}', '${escapedItem}')">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                `;
             }
+        }
+        DOM.productList.innerHTML = listHtml;
+    }
+    
+    async function editProduct(category, oldName) {
+        const newName = prompt(`请输入 "${oldName}" 的新名称：`, oldName);
+        
+        if (newName && newName.trim() !== oldName) {
+            const trimmedNewName = newName.trim();
+            
+            let isDuplicate = false;
+            for (const cat in cloudData.productTemplate) {
+                if (cloudData.productTemplate[cat].includes(trimmedNewName)) {
+                    isDuplicate = true;
+                    break;
+                }
+            }
+
+            if (isDuplicate) {
+                alert(`"${trimmedNewName}" 已经在清单中，请使用其他名称！`);
+                return;
+            }
+            
+            const list = cloudData.productTemplate[category];
+            const oldIndex = list.indexOf(oldName);
+            
+            if (oldIndex !== -1) {
+                list[oldIndex] = trimmedNewName;
+                sortCategory(category);
+                
+                for (let i = 0; i < cloudData.cartData.length; i++) {
+                    if (cloudData.cartData[i].name === oldName) {
+                        cloudData.cartData[i].name = trimmedNewName;
+                        break; 
+                    }
+                }
+                
+                await saveProductsToCloud();
+                
+                renderProductList();
+                renderCart();
+            }
+        }
+    }
+    
+    async function deleteProduct(category, name) {
+        if (confirm(`确定要从清单中删除采购项 "${name}" 吗？此操作将无法撤销。`)) {
+            const list = cloudData.productTemplate[category];
+            const oldIndex = list.indexOf(name);
+            
+            if (oldIndex !== -1) {
+                list.splice(oldIndex, 1);
+                
+                cloudData.cartData = cloudData.cartData.filter(item => item.name !== name);
+                
+                await saveProductsToCloud();
+                
+                renderProductList();
+                renderCart();
+            }
+        }
+    }
+
+    async function addSelectedToCart() {
+        const checkboxes = document.querySelectorAll('#product-list input[type="checkbox"]');
+        let selectedCount = 0;
+        
+        const existingCartMap = new Map();
+        for (const item of cloudData.cartData) {
+            existingCartMap.set(item.name, { purchased: item.purchased, price: item.price });
+        }
+        
+        const newCartItems = [];
+        const selectedItemNames = new Set();
+        
+        for (const checkbox of checkboxes) {
+            const itemName = checkbox.getAttribute('data-item-name');
+            const existingItem = existingCartMap.get(itemName);
+
+            if (checkbox.checked) {
+                newCartItems.push({
+                    name: itemName,
+                    purchased: existingItem ? existingItem.purchased : false,
+                    price: existingItem ? existingItem.price : ''
+                });
+                selectedItemNames.add(itemName);
+                selectedCount++;
+                
+                // 核心：立即取消 DOM 上的勾选状态
+                checkbox.checked = false;
+            }
+        }
+        
+        // 确保未在当前操作中被选中的旧购物车项目也保留
+        for (const item of cloudData.cartData) {
+            if (!selectedItemNames.has(item.name)) {
+                 newCartItems.push(item);
+            }
+        }
+
+        cloudData.cartData = newCartItems; 
+        
+        if (selectedCount === 0) {
+            alert("请先勾选您要采购的商品！");
+            return;
+        }
+        
+        await saveProductsToCloud(); 
+        
+        renderCart();
+        
+        openTab(null, 'cart-tab');
+        alert(`成功添加 ${selectedCount} 件商品到购物车，请在结算页记录价格！`);
+    }
+
+    async function addNewProductToList() {
+        const itemName = DOM.newProductInput.value.trim();
+        const selectedCategoryKey = DOM.newProductCategory.value;
+
+        if (itemName === "") {
+            alert("请输入采购项名称。");
+            return;
+        }
+        
+        for (const category in cloudData.productTemplate) {
+            if (cloudData.productTemplate[category].includes(itemName)) {
+                 alert(`"${itemName}" 已经在清单中！`);
+                 DOM.newProductInput.value = ''; 
+                 DOM.newProductInput.focus();
+                 return;
+            }
+        }
+
+        const smartCategoryKey = getCategoryByKeyword(itemName);
+        const targetCategoryKey = smartCategoryKey || selectedCategoryKey;
+        
+        // 如果目标分类不存在
+        if (!cloudData.productTemplate[targetCategoryKey]) {
+            cloudData.productTemplate[targetCategoryKey] = [];
+        }
+        
+        cloudData.productTemplate[targetCategoryKey].push(itemName);
+         
+        sortCategory(targetCategoryKey); 
+         
+        await saveProductsToCloud();
+         
+        renderProductList(); 
+         
+        // 自动勾选新添加的项
+        const newCheckbox = document.querySelector(`input[data-item-name="${itemName}"]`);
+        if (newCheckbox) {
+            newCheckbox.checked = true;
+        }
+        
+        populateCategorySelect(); // 更新分类下拉框
+        
+        alert("新项目已添加到清单并勾选，请点击 '加入购物车并前往结算' 完成添加。");
+             
+        DOM.newProductInput.value = ''; 
+        DOM.newProductInput.focus();
+    }
+
+
+    // --- 2. 购物车逻辑 (结算和价格记录) ---
+    
+    function renderCart() {
+        let tableHtml = '';
+        
+        const cartItems = cloudData.cartData; 
+
+        if (cartItems.length === 0) {
+            tableHtml = `<tr><td colspan="3" style="text-align: center; padding: 20px; color:#8e8e93;">购物车是空的，请在选品清单中勾选！</td></tr>`;
         } else {
-            // 上传失败时恢复按钮状态
-            btn.innerHTML = `<i class="fas fa-upload"></i> ${t('uploadBtn')}`;
-            btn.style.animation = '';
+            for (let index = 0; index < cartItems.length; index++) {
+                const item = cartItems[index];
+                const purchasedClass = item.purchased ? 'purchased' : '';
+                const checkedAttr = item.purchased ? 'checked' : '';
+                
+                // 渲染时，显示格式化后的价格
+                const displayValue = formatPrice(item.price);
+                
+                tableHtml += `
+                    <tr class="cart-item-row ${purchasedClass}">
+                        <td>
+                            <input type="checkbox" ${checkedAttr} onchange="togglePurchased(${index})">
+                        </td>
+                        <td><span class="item-name">${item.name}</span></td>
+                        <td style="text-align: right;">
+                            <input type="number" 
+                                class="price-input" 
+                                value="${item.price || ''}" 
+                                placeholder="0" 
+                                inputmode="numeric" 
+                                pattern="[0-9]*"
+                                onchange="updateItemPrice(${index}, this.value, this)">
+                        </td>
+                    </tr>
+                `;
+            }
         }
-      } else {
-        alert(t('saveDuplicatesOnly', {
-          uploader: uploader,
-          duplicates: duplicates.join(', ')
-        }));
-      }
-      
-      // 清空单号文本框
-      document.getElementById('trackingNumbers').value = '';
-      // 保留地点，方便连续上传
-    });
+        DOM.cartTableBody.innerHTML = tableHtml;
+        calculateTotalCost();
+    }
+    
+    // *** 核心修复 V8：采用 onchange 事件处理价格更新 ***
+    async function updateItemPrice(index, rawValueString, inputElement) {
+        // 1. 解析输入值
+        const rawValue = parseFormattedPrice(rawValueString);
+        const cartItems = cloudData.cartData;
 
-    // --- 核心搜索功能 ---
-    document.getElementById('searchBtn').addEventListener('click', function(){
-      const key = document.getElementById('searchKey').value.trim();
-      if (key.length < 4) {
-        alert(t('minDigits'));
-        return;
-      }
-      
-      const loader = document.getElementById('searchLoader');
-      const resultsDiv = document.getElementById('searchResults');
-      loader.style.display = 'block';
-      resultsDiv.innerHTML = "";
-      
-      // 直接使用已加载到全局的 currentRecords 进行本地搜索 (无需等待异步，因为它已经在初始化时加载了)
-      setTimeout(() => {
-        const records = currentRecords; 
-        const matched = records.filter(rec => rec.number.endsWith(key));
+        // 2. 确定状态
+        const isPurchased = (rawValue !== '' && rawValue > 0);
         
-        loader.style.display = 'none';
+        // 3. 更新底层数据
+        cartItems[index].price = rawValue; 
+        cartItems[index].purchased = isPurchased;
         
-        if (matched.length === 0) {
-          resultsDiv.innerHTML = `<div class="no-results">${t('noResults')}</div>`;
-        } else {
-          matched.forEach(rec => {
-            const div = document.createElement('div');
-            div.className = 'record';
-            div.innerHTML = `
-              <div><strong>${t('recordNumber')}：</strong>${rec.number}</div>
-              <div><strong>${t('recordLocation')}：</strong>${rec.uploader}</div>
-              <div><strong>${t('recordTime')}：</strong>${rec.uploadTime}</div>
-            `;
-            resultsDiv.appendChild(div);
-          });
+        // 4. 更新行样式和复选框状态
+        const row = inputElement.closest('.cart-item-row');
+        if (row) {
+            row.classList.toggle('purchased', isPurchased);
+            row.querySelector('input[type="checkbox"]').checked = isPurchased;
+        }
+
+        calculateTotalCost(); 
+        await saveProductsToCloud();
+    }
+
+    async function togglePurchased(index) {
+        const cartItems = cloudData.cartData;
+        const currentCheckbox = event.target; 
+        const isChecked = currentCheckbox.checked;
+        const row = currentCheckbox.closest('.cart-item-row');
+        const priceInput = row.querySelector('.price-input');
+        
+        cartItems[index].purchased = isChecked;
+
+        if (!isChecked) {
+            // 如果取消勾选，清除价格和输入框显示
+            cartItems[index].price = '';
+            priceInput.value = ''; // 清除纯数字输入框
         }
         
-        // 保存搜索历史
-        const history = getSearchHistory();
-        const now = new Date().toLocaleTimeString();
-        const existingIndex = history.findIndex(item => item.term === key);
-        if (existingIndex !== -1) {
-          history.splice(existingIndex, 1);
-        }
-        history.unshift({
-          term: key,
-          time: now
-        });
+        calculateTotalCost(); 
         
-        if (history.length > 5) {
-          history.pop();
+        row.classList.toggle('purchased', isChecked);
+        
+        await saveProductsToCloud(); 
+    }
+
+    function calculateTotalCost() {
+        let total = 0;
+        const cartItems = cloudData.cartData;
+        
+        for (let i = 0; i < cartItems.length; i++) {
+            const item = cartItems[i];
+            const price = parseFloat(item.price);
+            if (item.purchased && !isNaN(price) && price > 0) {
+                 total += price;
+            }
         }
         
-        saveSearchHistory(history);
-        displaySearchHistory();
-      }, 800); 
-    });
+        grandTotalCost = total; 
+        DOM.cartTotalDisplay.textContent = `总支出: ${formatter.format(grandTotalCost)}${CURRENCY_SUFFIX}`;
+    }
+    
+    async function copyCartSummary() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const todayDate = `${year}-${month}-${day}`;
 
-    // 清空搜索历史
-    document.getElementById('clearHistory').addEventListener('click', function() {
-      if (confirm(t('clearConfirm'))) {
-        saveSearchHistory([]);
-        displaySearchHistory();
-      }
-    });
+        let summaryText = `📅 ${todayDate} 采购总结:\n\n`; 
+        let hasPurchasedItems = false;
+        const cartItems = cloudData.cartData;
+        
+        for (let i = 0; i < cartItems.length; i++) {
+            const item = cartItems[i];
+            const price = parseFormattedPrice(item.price);
+            if (item.purchased && price !== '' && price > 0) {
+                hasPurchasedItems = true;
+                const formattedPrice = formatPrice(price);
+                summaryText += `${item.name}: ${formattedPrice}\n`;
+            }
+        }
+        
+        if (!hasPurchasedItems) {
+            alert("请先在清单中勾选已采购项目并填写价格！");
+            return;
+        }
 
-    // 语言切换事件
-    document.querySelectorAll('.lang-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        setLanguage(this.getAttribute('data-lang'));
-      });
-    });
+        summaryText += "\n------------------\n";
+        summaryText += `💰 总支出: ${formatter.format(grandTotalCost)}${CURRENCY_SUFFIX}`;
+        
+        try {
+            if (navigator.clipboard) {
+                await navigator.clipboard.writeText(summaryText);
+                alert("🛒 采购清单 (含日期) 已成功复制到剪贴板！");
+            } else {
+                const textarea = document.createElement('textarea');
+                textarea.value = summaryText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert("🛒 采购清单 (含日期) 已成功复制到剪贴板！");
+            }
+        } catch (err) {
+            console.error('无法复制内容:', err);
+            alert('复制失败，请手动复制以下内容:\n\n' + summaryText);
+        }
+    }
 
-    // 初始化：加载语言，并从云端加载数据
-    document.addEventListener('DOMContentLoaded', async () => {
-      const savedLang = localStorage.getItem('preferredLanguage') || 'cn';
-      setLanguage(savedLang);
-      
-      // 异步加载数据并更新计数器
-      await loadAndDisplayData();
-      
-      displaySearchHistory();
-    });
-  </script>
+    async function resetCart() {
+        const cartItems = cloudData.cartData;
+        const purchasedItems = cartItems.filter(item => item.purchased);
+
+        if (purchasedItems.length === 0) {
+            alert("没有已完成 (已勾选且已填写价格) 的项目可以清空。");
+            return;
+        }
+
+        if (confirm(`确定要清空 ${purchasedItems.length} 个已完成的项目吗？`)) {
+            cloudData.cartData = cartItems.filter(item => !item.purchased);
+            
+            await saveProductsToCloud(); 
+            
+            renderCart();
+            
+            openTab(null, 'product-tab');
+            renderProductList(); 
+
+            alert(`已成功清空 ${purchasedItems.length} 个已完成的项目！`);
+        }
+    }
+</script>
 </body>
 </html>
-
