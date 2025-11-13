@@ -3,14 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>快递单号管理 (公开版)</title>
-  
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
+  <title>快递单号管理</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+Myanmar:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    /* 样式代码保持不变 */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -328,6 +324,12 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
     @keyframes success {
       0% { background: linear-gradient(90deg, var(--primary), var(--primary-light)); }
       50% { background: linear-gradient(90deg, var(--success), #66bb6a); }
@@ -417,6 +419,20 @@
       margin-right: 8px;
       color: var(--primary);
     }
+    
+    /* 上传计数器 */
+    .counter {
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 8px;
+      font-size: 0.8rem;
+    }
   </style>
 </head>
 <body>
@@ -435,7 +451,7 @@
       </div>
     </div>
     
-    <nav id="mainNav">
+    <nav>
       <ul class="nav-list">
         <li class="nav-item">
           <a href="#" class="nav-link active" data-page="uploadPage">
@@ -508,18 +524,16 @@ ZT1122334455"></textarea>
   </div>
 
   <script>
-    // -----------------------------------------------------------
-    // 📢📢📢 关键：请替换成您自己的 Supabase URL 和 KEY 📢📢📢
-    // -----------------------------------------------------------
-    const SUPABASE_URL = 'https://YOUR_SUPABASE_URL.supabase.co'; // <-- 替换您的 URL
-    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // <-- 替换您的 Public Anon Key
-    
-    // 💥 修复 ReferenceError 的关键：创建 Supabase 客户端实例
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    
-    // -----------------------------------------------------------
-    // 语言和翻译数据 
-    // -----------------------------------------------------------
+    // *********************************************************************************
+    // *** JSONBin.io 云同步配置信息 (已为您配置 Master Key 和 Bin ID) ***
+    // *********************************************************************************
+    // ⚠️ 警告：Master Key 暴露在客户端代码中，存在安全风险，仅建议用于低敏感度的内部应用。
+    const JSONBIN_ID = '6914d01eae596e708f552007'; // 您的快递单号 Bin ID
+    const JSONBIN_MASTER_KEY = '$2a$10$IpDKTR7rokm3XA7rNEmLoeaqE9aZxj2Vu23VSYCVN7Hj5q8V1X25.'; // 您的 Master Key
+    const API_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_ID}`;
+    // *********************************************************************************
+
+    // 语言翻译数据 (保持不变)
     const translations = {
       cn: {
         totalCount: "已存单号",
@@ -540,8 +554,8 @@ ZT1122334455"></textarea>
         noResults: "没有找到匹配记录",
         noHistory: "暂无搜索记录",
         saveSuccess: "上传成功！",
-        saveSuccessWithDuplicates: "上传成功！新上传 {count} 条记录。",
-        saveDuplicatesOnly: "所有上传的单号已存在，无新记录上传。",
+        saveSuccessWithDuplicates: "上传成功！新上传 {count} 条记录。\n以下单号已由 {uploader} 上传过，未重复上传：{duplicates}",
+        saveDuplicatesOnly: "所有上传的单号已由 {uploader} 上传过，无新记录上传：{duplicates}",
         fillRequired: "请填写上传地点和快递单号！",
         minDigits: "请输入至少 4 位数字！",
         clearConfirm: "确定要清空所有搜索记录吗？",
@@ -550,8 +564,10 @@ ZT1122334455"></textarea>
         recordNumber: "单号",
         recordLocation: "地点",
         recordTime: "上传时间",
+        loadError: "无法从云端加载数据，请检查配置或网络！",
+        saveError: "数据上传失败，请检查配置或网络！"
       },
-      mm: { 
+      mm: {
         totalCount: "သိမ်းဆည်းထားသော ကုဒ်နံပါတ်များ",
         historyCount: "ရှာဖွေမှု မှတ်တမ်း",
         uploadNav: "ကုဒ်နံပါတ် တင်ရန်",
@@ -570,8 +586,8 @@ ZT1122334455"></textarea>
         noResults: "မှတ်တမ်းမရှိပါ",
         noHistory: "ရှာဖွေမှု မှတ်တမ်း မရှိပါ",
         saveSuccess: "အောင်မြင်စွာ တင်ပြီးပါပြီ!",
-        saveSuccessWithDuplicates: "အောင်မြင်စွာ တင်ပြီးပါပြီ! {count} မှတ်တမ်းအသစ် တင်ပြီးပါပြီ။",
-        saveDuplicatesOnly: "တင်လိုက်သော ကုဒ်နံပါတ်အားလုံးကို ယခင်တင်ပြီးဖြစ်ပါသည်၊ မှတ်တမ်းအသစ်မရှိပါ။",
+        saveSuccessWithDuplicates: "အောင်မြင်စွာ တင်ပြီးပါပြီ! {count} မှတ်တမ်းအသစ် တင်ပြီးပါပြီ။\nအောက်ပါ ကုဒ်နံပါတ်များကို {uploader} မှ ယခင်တင်ပြီးဖြစ်ပါသည် - {duplicates}",
+        saveDuplicatesOnly: "တင်လိုက်သော ကုဒ်နံပါတ်အားလုံးကို {uploader} မှ ယခင်တင်ပြီးဖြစ်ပါသည် - {duplicates}",
         fillRequired: "တင်သည့်နေရာနှင့် ကုဒ်နံပါတ်များ ထည့်ပါ!",
         minDigits: "အနည်းဆုံး နံပါတ် ၄ လုံး ထည့်ပါ!",
         clearConfirm: "ရှာဖွေမှု မှတ်တမ်းအားလုံးကို ရှင်းလိုပါသလား?",
@@ -579,12 +595,66 @@ ZT1122334455"></textarea>
         numbersRequired: "ကုဒ်နံပါတ်များ ထည့်ပါ!",
         recordNumber: "နံပါတ်",
         recordLocation: "နေရာ",
-        recordTime: "တင်ချိန်"
+        recordTime: "တင်ချိန်",
+        loadError: "无法从云端加载数据，请检查配置或网络！",
+        saveError: "数据上传失败，请检查配置或网络！"
       }
     };
-    
+
     let currentLang = 'cn';
+    // 全局存储从云端加载的记录
+    let currentRecords = [];
     
+    // --- JSONBin.io API Functions ---
+
+    // 异步：从云端加载数据
+    async function loadDataFromCloud() {
+        try {
+            const response = await fetch(API_URL, {
+                method: 'GET',
+                headers: {
+                    'X-Master-Key': JSONBIN_MASTER_KEY
+                }
+            });
+            const data = await response.json();
+            // JSONBin 将数据包裹在 'record' 对象中，如果 Bin 为空，则返回空对象 {}，所以我们取 record 或空数组 []
+            return data.record && Array.isArray(data.record) ? data.record : []; 
+        } catch (error) {
+            console.error("Error loading data from JSONBin:", error);
+            // 只有在加载失败时才弹窗提示，不影响程序运行
+            // alert(t('loadError')); 
+            return [];
+        }
+    }
+
+    // 异步：更新/覆盖整个 Bin 内容
+    async function updateDataOnCloud(data) {
+        try {
+            const response = await fetch(API_URL, {
+                method: 'PUT', // PUT 方法用于完全覆盖数据
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': JSONBIN_MASTER_KEY
+                },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                return true;
+            } else {
+                console.error("Error updating data on JSONBin:", await response.text());
+                alert(t('saveError'));
+                return false;
+            }
+        } catch (error) {
+            console.error("Error updating data on JSONBin:", error);
+            alert(t('saveError'));
+            return false;
+        }
+    }
+    
+    // --- 语言和 UI Functions ---
+
     function setLanguage(lang) {
       currentLang = lang;
       localStorage.setItem('preferredLanguage', lang);
@@ -618,38 +688,31 @@ ZT1122334455"></textarea>
       return text;
     }
 
-    // -----------------------------------------------------------
-    // 页面切换功能 
-    // -----------------------------------------------------------
     document.querySelectorAll('.nav-link').forEach(link => {
       link.addEventListener('click', function(e) {
         e.preventDefault();
-        
         document.querySelectorAll('.nav-link').forEach(item => {
           item.classList.remove('active');
         });
         this.classList.add('active');
-        
         const targetPage = this.getAttribute('data-page');
         document.querySelectorAll('.page-container').forEach(page => {
           page.classList.remove('active');
         });
         document.getElementById(targetPage).classList.add('active');
-        
         if (targetPage === 'searchPage') {
           displaySearchHistory();
         }
       });
     });
 
-    // -----------------------------------------------------------
-    // 搜索历史逻辑 (使用 localStorage) - 此部分仍使用 localStorage
-    // -----------------------------------------------------------
+    // 从 localStorage 中读取搜索历史 (此部分仍使用 localStorage，因为它是个性化、非核心数据)
     function getSearchHistory() {
       const history = localStorage.getItem('searchHistory');
       return history ? JSON.parse(history) : [];
     }
 
+    // 保存搜索历史
     function saveSearchHistory(history) {
       localStorage.setItem('searchHistory', JSON.stringify(history));
       updateCounters();
@@ -674,42 +737,23 @@ ZT1122334455"></textarea>
           document.getElementById('searchKey').value = item.term;
           document.getElementById('searchBtn').click();
         });
-        
         historyContainer.appendChild(tag);
       });
     }
 
-    document.getElementById('clearHistory').addEventListener('click', function() {
-      if (confirm(t('clearConfirm'))) {
-        saveSearchHistory([]);
-        displaySearchHistory();
-      }
-    });
-
-    // -----------------------------------------------------------
-    // Supabase 数据操作和计数器更新 (已更新为 Supabase 逻辑)
-    // -----------------------------------------------------------
-
-    async function getTotalCount() {
-      // 获取总记录数
-      const { count, error } = await supabase
-        .from('tracking_records')
-        .select('*', { count: 'exact', head: true });
-      
-      if (error) {
-        console.error('获取总数失败:', error.message);
-        return 0;
-      }
-      return count || 0;
-    }
-
-    async function updateCounters() {
-      const count = await getTotalCount();
-      document.getElementById('totalCount').textContent = count;
+    // 更新计数器 (现在依赖全局 currentRecords 的长度)
+    function updateCounters() {
+      document.getElementById('totalCount').textContent = currentRecords ? currentRecords.length : 0;
       document.getElementById('historyCount').textContent = getSearchHistory().length;
     }
     
-    // 添加上传功能 (使用 Supabase)
+    // 首次加载数据并更新计数器 (异步)
+    async function loadAndDisplayData() {
+        currentRecords = await loadDataFromCloud();
+        updateCounters();
+    }
+
+    // --- 核心上传功能 (修改为异步和云操作) ---
     document.getElementById('uploadBtn').addEventListener('click', async function(){
       const uploader = document.getElementById('uploader').value.trim();
       const text = document.getElementById('trackingNumbers').value.trim();
@@ -718,70 +762,83 @@ ZT1122334455"></textarea>
         alert(t('locationRequired'));
         return;
       }
+      
       if (!text) {
         alert(t('numbersRequired'));
         return;
       }
       
       let numbers = text.split('\n').map(s => s.trim()).filter(s => s);
-      numbers = [...new Set(numbers)]; // 去除同一批内的重复
+      numbers = [...new Set(numbers)];
       
-      const now = new Date().toISOString();
-      // 注意：这里我们依靠 Supabase RLS 的 "Upsert" 行为来处理重复键（即 number 字段的唯一约束）
-      const recordsToInsert = numbers.map(number => ({
-        number,
-        uploader,
-        upload_time: now 
-      }));
-
-      const uploadBtn = this;
-      uploadBtn.disabled = true;
-
-      // 尝试插入所有记录，使用 onConflict 来优雅地处理重复单号
-      // 确保您的 number 字段在数据库中设置了 UNIQUE 约束
-      const { data: insertedData, error: insertError } = await supabase
-          .from('tracking_records')
-          .insert(recordsToInsert)
-          .onConflict('number') 
-          .select('number'); 
-
-      uploadBtn.disabled = false;
-
-      if (insertError) {
-          console.error('Insert Error:', insertError);
-          // 只有在 RLS 策略或数据库连接错误时才弹窗
-          alert(`上传失败: ${insertError.message || '请检查数据库设置和网络连接。'}`);
-          return;
-      }
-
-      const newCount = insertedData ? insertedData.length : 0;
+      // 1. 从云端加载最新记录 (确保基于最新的云数据进行合并)
+      const records = await loadDataFromCloud();
+      const now = new Date().toLocaleString();
+      const newRecords = [];
+      const duplicates = [];
       
-      if (newCount > 0) {
-        // 成功插入新记录
-        uploadBtn.innerHTML = `<i class="fas fa-check"></i> ${t('saveSuccess')}`;
-        uploadBtn.style.animation = 'success 1.5s';
+      numbers.forEach(number => {
+        // 检查是否已有该单号的记录
+        if (records.some(rec => rec.number === number)) {
+          duplicates.push(number);
+        } else {
+          newRecords.push({
+            number,
+            uploader,
+            uploadTime: now
+          });
+        }
+      });
+      
+      if (newRecords.length > 0) {
+        const updatedRecords = records.concat(newRecords);
         
-        setTimeout(() => {
-          uploadBtn.innerHTML = `<i class="fas fa-upload"></i> ${t('uploadBtn')}`;
-          uploadBtn.style.animation = '';
-        }, 2000);
+        // 2. 将合并后的新记录上传到云端 (覆盖整个 Bin)
+        const btn = this;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 正在上传...`;
         
-        alert(t('saveSuccessWithDuplicates', {
-          count: newCount
-        }));
+        const success = await updateDataOnCloud(updatedRecords);
+
+        if (success) {
+            currentRecords = updatedRecords; // 更新全局数据
+            updateCounters();
+            
+            btn.innerHTML = `<i class="fas fa-check"></i> ${t('saveSuccess')}`;
+            btn.style.animation = 'success 1.5s';
+            
+            setTimeout(() => {
+                btn.innerHTML = `<i class="fas fa-upload"></i> ${t('uploadBtn')}`;
+                btn.style.animation = '';
+            }, 2000);
+            
+            if (duplicates.length > 0) {
+              alert(t('saveSuccessWithDuplicates', {
+                count: newRecords.length,
+                uploader: uploader,
+                duplicates: duplicates.join(', ')
+              }));
+            } else {
+              alert(t('saveSuccess', {count: newRecords.length}));
+            }
+        } else {
+            // 上传失败时恢复按钮状态
+            btn.innerHTML = `<i class="fas fa-upload"></i> ${t('uploadBtn')}`;
+            btn.style.animation = '';
+        }
       } else {
-         // 如果 newCount 为 0，说明所有单号都因为唯一约束而被跳过
-         alert(t('saveDuplicatesOnly'));
+        alert(t('saveDuplicatesOnly', {
+          uploader: uploader,
+          duplicates: duplicates.join(', ')
+        }));
       }
       
-      // 清空表单
+      // 清空单号文本框
       document.getElementById('trackingNumbers').value = '';
-      document.getElementById('uploader').value = '';
-      updateCounters(); // 更新计数器
+      // 保留地点，方便连续上传
     });
 
-    // 添加搜索功能 (使用 Supabase)
-    document.getElementById('searchBtn').addEventListener('click', async function(){
+    // --- 核心搜索功能 ---
+    document.getElementById('searchBtn').addEventListener('click', function(){
       const key = document.getElementById('searchKey').value.trim();
       if (key.length < 4) {
         alert(t('minDigits'));
@@ -793,53 +850,55 @@ ZT1122334455"></textarea>
       loader.style.display = 'block';
       resultsDiv.innerHTML = "";
       
-      // 使用 ILIKE 查询实现模糊匹配
-      const { data: matched, error } = await supabase
-        .from('tracking_records')
-        // 使用 ILIKE 配合 %${key} 即可实现结尾匹配或模糊匹配
-        .select('number, uploader, upload_time')
-        .ilike('number', `%${key}`) 
-        .order('upload_time', { ascending: false }); // 按时间倒序
-
-      loader.style.display = 'none';
-      
-      if (error) {
-        console.error('Search Error:', error);
-        resultsDiv.innerHTML = `<div class="no-results">查询失败: ${error.message}</div>`;
-        return;
-      }
-      
-      if (matched.length === 0) {
-        resultsDiv.innerHTML = `<div class="no-results">${t('noResults')}</div>`;
-      } else {
-        matched.forEach(rec => {
-          const div = document.createElement('div');
-          div.className = 'record';
-          div.innerHTML = `
-            <div><strong>${t('recordNumber')}：</strong>${rec.number}</div>
-            <div><strong>${t('recordLocation')}：</strong>${rec.uploader}</div>
-            <div><strong>${t('recordTime')}：</strong>${new Date(rec.upload_time).toLocaleString()}</div>
-          `;
-          resultsDiv.appendChild(div);
+      // 直接使用已加载到全局的 currentRecords 进行本地搜索 (无需等待异步，因为它已经在初始化时加载了)
+      setTimeout(() => {
+        const records = currentRecords; 
+        const matched = records.filter(rec => rec.number.endsWith(key));
+        
+        loader.style.display = 'none';
+        
+        if (matched.length === 0) {
+          resultsDiv.innerHTML = `<div class="no-results">${t('noResults')}</div>`;
+        } else {
+          matched.forEach(rec => {
+            const div = document.createElement('div');
+            div.className = 'record';
+            div.innerHTML = `
+              <div><strong>${t('recordNumber')}：</strong>${rec.number}</div>
+              <div><strong>${t('recordLocation')}：</strong>${rec.uploader}</div>
+              <div><strong>${t('recordTime')}：</strong>${rec.uploadTime}</div>
+            `;
+            resultsDiv.appendChild(div);
+          });
+        }
+        
+        // 保存搜索历史
+        const history = getSearchHistory();
+        const now = new Date().toLocaleTimeString();
+        const existingIndex = history.findIndex(item => item.term === key);
+        if (existingIndex !== -1) {
+          history.splice(existingIndex, 1);
+        }
+        history.unshift({
+          term: key,
+          time: now
         });
+        
+        if (history.length > 5) {
+          history.pop();
+        }
+        
+        saveSearchHistory(history);
+        displaySearchHistory();
+      }, 800); 
+    });
+
+    // 清空搜索历史
+    document.getElementById('clearHistory').addEventListener('click', function() {
+      if (confirm(t('clearConfirm'))) {
+        saveSearchHistory([]);
+        displaySearchHistory();
       }
-      
-      // 保存搜索历史
-      const history = getSearchHistory();
-      const now = new Date().toLocaleTimeString();
-      const existingIndex = history.findIndex(item => item.term === key);
-      if (existingIndex !== -1) {
-        history.splice(existingIndex, 1);
-      }
-      history.unshift({
-        term: key,
-        time: now
-      });
-      if (history.length > 5) {
-        history.pop();
-      }
-      saveSearchHistory(history);
-      displaySearchHistory();
     });
 
     // 语言切换事件
@@ -849,13 +908,15 @@ ZT1122334455"></textarea>
       });
     });
 
-    // 初始化
-    document.addEventListener('DOMContentLoaded', () => {
+    // 初始化：加载语言，并从云端加载数据
+    document.addEventListener('DOMContentLoaded', async () => {
       const savedLang = localStorage.getItem('preferredLanguage') || 'cn';
       setLanguage(savedLang);
       
+      // 异步加载数据并更新计数器
+      await loadAndDisplayData();
+      
       displaySearchHistory();
-      updateCounters(); 
     });
   </script>
 </body>
