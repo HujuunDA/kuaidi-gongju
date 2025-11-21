@@ -3,54 +3,459 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>快递单号管理与同步系统 (最终优化版)</title>
+  <title>快递单号管理与同步系统 (JSONBin 同步版)</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+Myanmar:wght@400;700&display=swap" rel="stylesheet">
   
   <style>
-    /* CSS 样式：保持和你原版一致 */
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    :root { --primary: #3f51b5; --primary-light: #5c6bc0; --primary-dark: #303f9f; --accent: #ff4081; --light: #f8fafc; --dark: #1a237e; --success: #4caf50; --error: #f44336; --gray: #78909c; --shadow: 0 4px 20px rgba(0, 0, 0, 0.1); --transition: all 0.3s ease; }
-    body { font-family: 'Noto Sans SC', 'Noto Sans Myanmar', 'Segoe UI', sans-serif; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); color: var(--dark); line-height: 1.6; min-height: 100vh; padding: 0; }
-    .container { max-width: 900px; margin: 0 auto; padding: 20px; }
-    .language-switcher { display: none; }
-    .lang-btn { background: none; border: none; padding: 5px 10px; border-radius: 20px; cursor: pointer; transition: var(--transition); font-weight: 500; }
-    .lang-btn.active { background: linear-gradient(90deg, var(--primary), var(--primary-light)); color: white; }
-    nav { background: rgba(255, 255, 255, 0.95); border-radius: 50px; max-width: 500px; margin: 30px auto; padding: 10px; box-shadow: var(--shadow); backdrop-filter: blur(5px); }
-    .nav-list { display: flex; justify-content: space-around; list-style: none; }
-    .nav-link { display: block; padding: 12px 20px; text-decoration: none; color: var(--dark); font-weight: 500; border-radius: 30px; transition: var(--transition); }
-    .nav-link.active { background: linear-gradient(90deg, var(--primary), var(--primary-light)); color: white; }
-    .nav-link i { margin-right: 8px; }
-    .page-container { display: none; animation: fadeIn 0.5s ease forwards; opacity: 0; }
-    .page-container.active { display: block; opacity: 1; }
-    .page { background: white; border-radius: 20px; padding: 30px; margin-bottom: 40px; box-shadow: var(--shadow); }
-    h2 { font-size: 1.8rem; margin-bottom: 25px; color: var(--primary); text-align: center; font-weight: 600; position: relative; padding-bottom: 15px; }
-    h2:after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 80px; height: 4px; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 2px; }
-    .form-group { margin-bottom: 25px; }
-    label { display: block; margin-bottom: 10px; font-weight: 500; color: var(--primary-dark); display: flex; align-items: center; }
-    label i { margin-right: 8px; color: var(--primary-light); }
-    input, textarea { width: 100%; padding: 15px; border: 2px solid #e8eaf6; border-radius: 12px; font-size: 1rem; background: #f8fafc; }
-    input:focus, textarea:focus { outline: none; border-color: var(--primary); }
-    textarea { resize: vertical; min-height: 150px; font-family: monospace; }
-    .btn { display: block; width: 100%; padding: 16px; background: linear-gradient(90deg, var(--primary), var(--primary-light)); color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: var(--transition); box-shadow: 0 4px 15px rgba(63, 81, 181, 0.3); }
-    .btn:hover { transform: translateY(-2px); }
-    .record { background: var(--light); border-radius: 15px; padding: 20px; margin-bottom: 15px; border-left: 4px solid var(--primary); }
-    .status-indicator { display: flex; justify-content: center; margin-bottom: 20px; gap: 20px; }
-    .status-item { display: flex; align-items: center; background: rgba(255, 255, 255, 0.7); padding: 8px 15px; border-radius: 20px; font-size: 0.9rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    .status-item i { margin-right: 8px; color: var(--primary); }
-    .lang-switch-box { cursor: pointer; background: linear-gradient(90deg, #f0f4f8, #e3f2fd); padding: 6px 12px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    .lang-switch-box .lang-btn { padding: 3px 6px; font-size: 0.9rem; font-weight: 700; color: var(--gray); background: none; border: none; cursor: pointer; }
-    .lang-switch-box .lang-btn.active { color: var(--primary); }
-    .export-btn-container { display: flex; align-items: center; background: rgba(255, 255, 255, 0.7); padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    .export-btn { background: none; border: none; color: var(--primary); font-weight: 500; cursor: pointer; margin-left: 5px; }
-    .export-btn i { margin-right: 5px; color: var(--success); }
-    .loader { display: none; width: 40px; height: 40px; margin: 20px auto; border: 4px solid rgba(63, 81, 181, 0.2); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    @keyframes success { 0% { background: linear-gradient(90deg, var(--primary), var(--primary-light)); } 50% { background: linear-gradient(90deg, var(--success), #66bb6a); } 100% { background: linear-gradient(90deg, var(--primary), var(--primary-light)); } }
-    .no-results { text-align: center; padding: 30px; color: #777; font-style: italic; }
-    .search-tag { display: inline-block; background: white; border: 1px solid var(--primary-light); border-radius: 20px; padding: 8px 16px; margin: 0 8px 8px 0; cursor: pointer; }
-    .recent-searches { margin-top: 30px; background: #f5f7ff; border-radius: 15px; padding: 20px; }
-    .clear-btn { background: none; border: none; color: var(--gray); cursor: pointer; margin-left: 10px; }
+    /* CSS 样式：保持完全不变 */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --primary: #3f51b5;
+      --primary-light: #5c6bc0;
+      --primary-dark: #303f9f;
+      --accent: #ff4081;
+      --light: #f8fafc;
+      --dark: #1a237e;
+      --success: #4caf50;
+      --error: #f44336;
+      --gray: #78909c;
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      --transition: all 0.3s ease;
+    }
+
+    body {
+      font-family: 'Noto Sans SC', 'Noto Sans Myanmar', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+      color: var(--dark);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 0;
+      position: relative;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .language-switcher {
+      display: none; 
+    }
+
+    .lang-btn {
+      background: none;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: var(--transition);
+      font-weight: 500;
+    }
+
+    .lang-btn.active {
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+      color: white;
+    }
+
+    nav {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 50px;
+      max-width: 500px;
+      margin: 30px auto;
+      padding: 10px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(5px);
+    }
+
+    .nav-list {
+      display: flex;
+      justify-content: space-around;
+      list-style: none;
+    }
+
+    .nav-item {
+      position: relative;
+      flex: 1;
+      text-align: center;
+    }
+
+    .nav-link {
+      display: block;
+      padding: 12px 20px;
+      text-decoration: none;
+      color: var(--dark);
+      font-weight: 500;
+      border-radius: 30px;
+      transition: var(--transition);
+    }
+
+    .nav-link.active, .nav-link:hover {
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+      color: white;
+    }
+
+    .nav-link i {
+      margin-right: 8px;
+    }
+
+    .page-container {
+      display: none;
+      animation: fadeIn 0.5s ease forwards;
+      opacity: 0;
+    }
+
+    .page-container.active {
+      display: block;
+      opacity: 1;
+    }
+
+    .page {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 40px;
+      box-shadow: var(--shadow);
+      transition: transform 0.3s ease;
+    }
+
+    .page:hover {
+      transform: translateY(-5px);
+    }
+
+    h2 {
+      font-size: 1.8rem;
+      margin-bottom: 25px;
+      color: var(--primary);
+      text-align: center;
+      font-weight: 600;
+      position: relative;
+      padding-bottom: 15px;
+    }
+
+    h2:after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      border-radius: 2px;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 500;
+      color: var(--primary-dark);
+      font-size: 1.05rem;
+      display: flex;
+      align-items: center;
+    }
+
+    label i {
+      margin-right: 8px;
+      color: var(--primary-light);
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid #e8eaf6;
+      border-radius: 12px;
+      font-size: 1rem;
+      transition: var(--transition);
+      background: #f8fafc;
+      color: var(--dark);
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.2);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 150px;
+      font-family: monospace;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(63, 81, 181, 0.3);
+    }
+
+    .btn:hover {
+      background: linear-gradient(90deg, var(--primary-dark), var(--primary));
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(63, 81, 181, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn i {
+      margin-right: 10px;
+    }
+
+    .record {
+      background: var(--light);
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 15px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+      transition: var(--transition);
+      border-left: 4px solid var(--primary);
+    }
+
+    .record:hover {
+      transform: translateX(5px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .record strong {
+      color: var(--primary);
+      font-weight: 600;
+      display: inline-block;
+      min-width: 90px;
+    }
+
+    #searchResults {
+      margin-top: 30px;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 30px;
+      color: #777;
+      font-style: italic;
+    }
+
+    .recent-searches {
+      margin-top: 30px;
+      background: #f5f7ff;
+      border-radius: 15px;
+      padding: 20px;
+    }
+
+    .recent-title {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 1.2rem;
+    }
+
+    .recent-title i {
+      margin-right: 10px;
+      color: var(--accent);
+    }
+
+    .search-tag {
+      display: inline-block;
+      background: white;
+      border: 1px solid var(--primary-light);
+      border-radius: 20px;
+      padding: 8px 16px;
+      margin: 0 8px 8px 0;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .search-tag:hover {
+      background: var(--primary);
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    .search-tag i {
+      margin-left: 5px;
+      font-size: 0.8rem;
+      opacity: 0.7;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes success {
+      0% { background: linear-gradient(90deg, var(--primary), var(--primary-light)); }
+      50% { background: linear-gradient(90deg, var(--success), #66bb6a); }
+      100% { background: linear-gradient(90deg, var(--primary), var(--primary-light)); }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+      .page {
+        padding: 20px;
+      }
+      h2 {
+        font-size: 1.5rem;
+      }
+      .nav-list {
+        flex-direction: column;
+      }
+      .nav-item {
+        margin-bottom: 5px;
+      }
+    }
+
+    .loader {
+      display: none;
+      width: 40px;
+      height: 40px;
+      margin: 20px auto;
+      border: 4px solid rgba(63, 81, 181, 0.2);
+      border-top: 4px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .clear-btn {
+      background: none;
+      border: none;
+      color: var(--gray);
+      cursor: pointer;
+      font-size: 0.9rem;
+      margin-left: 10px;
+      transition: var(--transition);
+    }
+
+    .clear-btn:hover {
+      color: var(--error);
+    }
+    
+    .status-indicator {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      gap: 20px;
+    }
+    
+    .status-item {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.7);
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    
+    .status-item i {
+      margin-right: 8px;
+      color: var(--primary);
+    }
+    
+    .lang-switch-box {
+        cursor: pointer;
+        background: linear-gradient(90deg, #f0f4f8, #e3f2fd); 
+        padding: 6px 12px; 
+        transition: var(--transition);
+        border-radius: 20px; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .lang-switch-box:hover {
+        box-shadow: 0 4px 10px rgba(63, 81, 181, 0.2);
+    }
+    
+    .lang-switch-box .lang-btn {
+        padding: 3px 6px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--gray);
+        background: none;
+        border: none;
+        transition: var(--transition);
+        line-height: 1; 
+        cursor: pointer;
+    }
+
+    .lang-switch-box .lang-btn.active {
+      color: var(--primary);
+    }
+    
+    .lang-switch-box .lang-btn:not(.active) {
+      color: var(--gray);
+    }
+    .lang-switch-box .lang-btn:not(.active):hover {
+        color: var(--primary-light);
+    }
+    
+    .export-btn-container {
+        display: flex;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.7);
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .export-btn {
+        background: none;
+        border: none;
+        color: var(--primary);
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        padding: 0;
+        margin-left: 5px;
+    }
+
+    .export-btn:hover {
+        color: var(--primary-dark);
+        transform: scale(1.05);
+    }
+    .export-btn i {
+        margin-right: 5px;
+        color: var(--success);
+    }
   </style>
 </head>
 <body>
@@ -59,11 +464,13 @@
       <div class="status-item">
         <i class="fas fa-box"></i> <span data-translate="totalCount">已存单号</span>: <span id="totalCount">...</span>
       </div>
+      
       <div class="export-btn-container">
         <button class="export-btn" id="exportExcelBtn">
             <i class="fas fa-file-excel"></i> <span data-translate="exportBtn">导出 Excel</span>
         </button>
       </div>
+      
       <div class="status-item lang-switch-box">
         <i class="fas fa-language"></i> <span data-translate="currentLang"></span>: 
         <button class="lang-btn active" data-lang="cn">中文</button>
@@ -75,42 +482,71 @@
     
     <nav>
       <ul class="nav-list">
-        <li class="nav-item"><a href="#" class="nav-link active" data-page="uploadPage"><i class="fas fa-upload"></i> <span data-translate="uploadNav">单号上传</span></a></li>
-        <li class="nav-item"><a href="#" class="nav-link" data-page="searchPage"><i class="fas fa-search"></i> <span data-translate="searchNav">单号查询</span></a></li>
+        <li class="nav-item">
+          <a href="#" class="nav-link active" data-page="uploadPage">
+            <i class="fas fa-upload"></i> <span data-translate="uploadNav">单号上传</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#" class="nav-link" data-page="searchPage">
+            <i class="fas fa-search"></i> <span data-translate="searchNav">单号查询</span>
+          </a>
+        </li>
       </ul>
     </nav>
     
     <div id="uploadPage" class="page-container active">
       <div class="page">
         <h2><span data-translate="uploadTitle">快递单号上传</span></h2>
+        
         <div class="form-group">
-          <label for="uploader"><i class="fas fa-location-dot"></i> <span data-translate="uploadLocation">上传地点</span>：</label>
+          <label for="uploader">
+            <i class="fas fa-location-dot"></i> <span data-translate="uploadLocation">上传地点</span>：
+          </label>
           <input type="text" id="uploader" data-translate-placeholder="uploaderPlaceholder" placeholder="请输入您的姓名或地点" required />
         </div>
+        
         <div class="form-group">
-          <label for="trackingNumbers"><i class="fas fa-list-ol"></i> <span data-translate="trackingNumbers">快递单号（每行一个）</span>：</label>
-          <textarea id="trackingNumbers" data-translate-placeholder="trackingNumbersPlaceholder" placeholder="例如：&#10;SF1234567890&#10;YT9876543210"></textarea>
+          <label for="trackingNumbers">
+            <i class="fas fa-list-ol"></i> <span data-translate="trackingNumbers">快递单号（每行一个）</span>：
+          </label>
+          <textarea id="trackingNumbers" data-translate-placeholder="trackingNumbersPlaceholder" placeholder="例如：
+SF1234567890
+YT9876543210
+ZT1122334455"></textarea>
         </div>
-        <button id="uploadBtn" class="btn"><i class="fas fa-upload"></i> <span data-translate="uploadBtn">上传快递单号</span></button>
+        
+        <button id="uploadBtn" class="btn">
+          <i class="fas fa-upload"></i> <span data-translate="uploadBtn">上传快递单号</span>
+        </button>
       </div>
     </div>
     
     <div id="searchPage" class="page-container">
       <div class="page">
         <h2><span data-translate="searchTitle">快递单号查询</span></h2>
+        
         <div class="form-group">
-          <label for="searchKey"><i class="fas fa-keyboard"></i> <span data-translate="searchLabel">输入至少 4 位数字（结尾匹配）</span>：</label>
+          <label for="searchKey">
+            <i class="fas fa-keyboard"></i> <span data-translate="searchLabel">输入至少 4 位数字（结尾匹配）</span>：
+          </label>
           <input type="text" id="searchKey" data-translate-placeholder="searchPlaceholder" placeholder="例如：7890" />
         </div>
-        <button id="searchBtn" class="btn"><i class="fas fa-search"></i> <span data-translate="searchBtn">搜索快递单号</span></button>
+        
+        <button id="searchBtn" class="btn">
+          <i class="fas fa-search"></i> <span data-translate="searchBtn">搜索快递单号</span>
+        </button>
+        
         <div class="loader" id="searchLoader"></div>
+        
         <div id="searchResults"></div>
+        
         <div class="recent-searches">
-          <div class="recent-title" style="display:flex;align-items:center;color:#3f51b5;font-weight:600;">
+          <div class="recent-title">
             <i class="fas fa-history"></i> <span data-translate="recentSearches">最近搜索记录</span>
             <button class="clear-btn" id="clearHistory"><i class="fas fa-trash-can"></i> <span data-translate="clearHistory">清空记录</span></button>
           </div>
-          <div id="searchHistory" style="margin-top:15px;"></div>
+          <div id="searchHistory"></div>
         </div>
       </div>
     </div>
@@ -118,156 +554,328 @@
 
   <script>
     // ======================================================================
-    // ** 核心配置：您的最新 Google Scripts 链接 **
+    // ** 1. JSONBin 配置 (已替换) **
     // ======================================================================
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzCG9fsoVz3xEiwjkQFFdNFqvoWLHYlLknya2kB9hbYwTCVeQiw2O8aqK8IlqZFLqurrg/exec';
+    const BIN_ID = '6914d01eae596e708f552007';
+    const API_KEY = '$2a$10$G2ttyXzQ4c41gE8veTSgAulGObfpRnEafJVX.sHKzGwJylDpekota';
+    
+    // JSONBin API 基础 URL (v3)
+    const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
     // ======================================================================
     
-    // ** 性能优化：数据缓存 **
-    let sheetDataCache = null;
-
+    // 语言翻译数据
     const translations = {
-      cn: { totalCount: "已存单号 (云端)", historyCount: "搜索历史", currentLang: "", uploadNav: "单号上传", searchNav: "单号查询", uploadTitle: "快递单号上传", uploadLocation: "上传地点", uploaderPlaceholder: "请输入您的姓名或地点", trackingNumbers: "快递单号（每行一个）", trackingNumbersPlaceholder: "例如：\nSF1234567890\nYT9876543210", uploadBtn: "上传快递单号", searchTitle: "快递单号查询", searchLabel: "输入至少 4 位数字（结尾匹配）", searchPlaceholder: "例如：7890", searchBtn: "搜索快递单号", recentSearches: "最近搜索记录", clearHistory: "清空记录", noResults: "没有找到匹配记录", noHistory: "暂无搜索记录", saveSuccess: "上传成功！", saveSuccessWithDuplicates: "上传成功！新上传 {count} 条记录。\n重复单号已跳过：{duplicates}", saveDuplicatesOnly: "所有单号已存在，无新记录。", fillRequired: "请填写上传地点和快递单号！", minDigits: "请输入至少 4 位数字！", clearConfirm: "确定要清空所有搜索记录吗？", locationRequired: "请填写上传地点！", numbersRequired: "请填写快递单号！", recordNumber: "单号", recordLocation: "地点", recordTime: "上传时间", exportBtn: "导出 Excel", exporting: "正在导出...", exportSuccess: "导出成功！", exportError: "导出失败！错误: ", saveError: "上传失败！\n请检查浏览器（建议托管文件）。" },
-      mm: { totalCount: "သိမ်းထားသော ကုဒ်နံပါတ်များ", historyCount: "ရှာဖွေမှု မှတ်တမ်း", currentLang: "", uploadNav: "ကုဒ် တင်ရန်", searchNav: "ကုဒ် ရှာဖွေရန်", uploadTitle: "ကုဒ် တင်ရန်", uploadLocation: "တင်သည့်နေရာ", uploaderPlaceholder: "သင့်အမည် သို့မဟုတ် နေရာ ထည့်ပါ", trackingNumbers: "ကုဒ်နံပါတ်များ (တစ်ကြောင်းတစ်ခု)", trackingNumbersPlaceholder: "ဥပမာ:\nSF1234567890\nYT9876543210", uploadBtn: "ကုဒ် တင်ရန်", searchTitle: "ကုဒ် ရှာရန်", searchLabel: "အနည်းဆုံး နံပါတ် ၄ လုံးအထက် ထည့်ပါ", searchPlaceholder: "ဥပမာ: ****7890", searchBtn: "ကုဒ် ရှာဖွေရန်", recentSearches: "လတ်တလော ရှာဖွေမှုများ", clearHistory: "မှတ်တမ်း ရှင်းရန်", noResults: "မှတ်တမ်းမရှိပါ", noHistory: "ရှာဖွေမှု မှတ်တမ်း မရှိပါ", saveSuccess: "အောင်မြင်ပါပြီ!", saveSuccessWithDuplicates: "အောင်မြင်ပါပြီ! {count} မှတ်တမ်းအသစ် တင်ပြီး။", saveDuplicatesOnly: "တင်လိုက်သော ကုဒ်နံပါတ်အားလုံး ရှိပြီးသားဖြစ်ပါသည်။", fillRequired: "နေရာနှင့် ကုဒ်နံပါတ်များ ထည့်ပါ!", minDigits: "အနည်းဆုံး နံပါတ် ၄ လုံး ထည့်ပါ!", clearConfirm: "ရှာဖွေမှု မှတ်တမ်းအားလုံးကို ရှင်းလိုပါသလား?", locationRequired: "တင်သည့်နေရာ ထည့်ပါ!", numbersRequired: "ကုဒ်နံပါတ်များ ထည့်ပါ!", recordNumber: "နံပါတ်", recordLocation: "နေရာ", recordTime: "အချိန်", exportBtn: "Excel ထုတ်ရန်", exporting: "ထုတ်ယူနေသည်...", exportSuccess: "ထုတ်ယူမှု အောင်မြင်ပါပြီ!", exportError: "ထုတ်ယူမှု မအောင်မြင်ပါ! အမှား:", saveError: "တင်ရန် မအောင်မြင်ပါ! ကွန်ရက်ကို စစ်ဆေးပါ။" }
+      cn: {
+        totalCount: "已存单号", 
+        historyCount: "搜索历史",
+        currentLang: "",
+        uploadNav: "单号上传",
+        searchNav: "单号查询",
+        uploadTitle: "快递单号上传",
+        uploadLocation: "上传地点",
+        uploaderPlaceholder: "请输入您的姓名或地点", 
+        trackingNumbers: "快递单号（每行一个）",
+        trackingNumbersPlaceholder: "例如：\nSF1234567890\nYT9876543210\nZT1122334455",
+        uploadBtn: "上传快递单号",
+        searchTitle: "快递单号查询",
+        searchLabel: "输入至少 4 位数字（结尾匹配）",
+        searchPlaceholder: "例如：7890",
+        searchBtn: "搜索快递单号",
+        recentSearches: "最近搜索记录",
+        clearHistory: "清空记录",
+        noResults: "没有找到匹配记录",
+        noHistory: "暂无搜索记录",
+        saveSuccess: "上传成功！",
+        saveSuccessWithDuplicates: "上传成功！新上传 {count} 条记录。\n以下单号已由 {uploader} 上传过，未重复上传：{duplicates}",
+        saveDuplicatesOnly: "所有上传的单号已由 {uploader} 上传过，无新记录上传：{duplicates}",
+        fillRequired: "请填写上传地点和快递单号！",
+        minDigits: "请输入至少 4 位数字！",
+        clearConfirm: "确定要清空所有搜索记录吗？",
+        locationRequired: "请填写上传地点！",
+        numbersRequired: "请填写快递单号！",
+        recordNumber: "单号",
+        recordLocation: "地点",
+        recordTime: "上传时间",
+        exportBtn: "导出 Excel", 
+        exporting: "正在导出...", 
+        exportSuccess: "导出成功！", 
+        exportError: "导出失败！错误: ", 
+        saveError: "上传失败！\n\n【错误原因】：{error}\n\n请检查网络连接。"
+      },
+      mm: {
+        totalCount: "သိမ်းထားသော ကုဒ်နံပါတ်များ (Cloud)", 
+        historyCount: "ရှာဖွေမှု မှတ်တမ်း",
+        currentLang: "",
+        uploadNav: "ကုဒ် တင်ရန်",
+        searchNav: "ကုဒ် ရှာဖွေရန်",
+        uploadTitle: "ကုဒ် တင်ရန်",
+        uploadLocation: "တင်သည့်နေရာ",
+        uploaderPlaceholder: "သင့်အမည် သို့မဟုတ် နေရာ ထည့်ပါ", 
+        trackingNumbers: "ကုဒ်နံပါတ်များ (တစ်ကြောင်းတစ်ခု)",
+        trackingNumbersPlaceholder: "ဥပမာ:\nSF1234567890\nYT9876543210\nZT1122334455",
+        uploadBtn: "ကုဒ် တင်ရန်",
+        searchTitle: "ကုဒ် ရှာရန်",
+        searchLabel: "အနည်းဆုံး နံပါတ် ၄ လုံးအထက် ထည့်ပါ (နောက်ဆုံးနံပါတ်)",
+        searchPlaceholder: "ဥပမာ: ****7890",
+        searchBtn: "ကုဒ် ရှာဖွေရန်",
+        recentSearches: "လတ်တလော ရှာဖွေမှုများ",
+        clearHistory: "မှတ်တမ်း ရှင်းရန်",
+        noResults: "မှတ်တမ်းမရှိပါ",
+        noHistory: "ရှာဖွေမှု မှတ်တမ်း မရှိပါ",
+        saveSuccess: "အောင်မြင်ပါပြီ!",
+        saveSuccessWithDuplicates: "အောင်မြင်ပါပြီ! {count} မှတ်တမ်းအသစ် တင်ပြီး။\nအောက်ပါ ကုဒ်နံပါတ်များကို {uploader} မှ ယခင်တင်ပြီးဖြစ်ပါသည် - {duplicates}",
+        saveDuplicatesOnly: "တင်လိုက်သော ကုဒ်နံပါတ်အားလုံးကို {uploader} မှ ယခင်တင်ပြီးဖြစ်ပါသည် - {duplicates}",
+        fillRequired: "နေရာနှင့် ကုဒ်နံပါတ်များ ထည့်ပါ!",
+        minDigits: "အနည်းဆုံး နံပါတ် ၄ လုံး ထည့်ပါ!",
+        clearConfirm: "ရှာဖွေမှု မှတ်တမ်းအားလုံးကို ရှင်းလိုပါသလား?",
+        locationRequired: "တင်သည့်နေရာ ထည့်ပါ!",
+        numbersRequired: "ကုဒ်နံပါတ်များ ထည့်ပါ!",
+        recordNumber: "နံပါတ်",
+        recordLocation: "နေရာ",
+        recordTime: "အချိန်",
+        exportBtn: "Excel ထုတ်ရန်", 
+        exporting: "ထုတ်ယူနေသည်...", 
+        exportSuccess: "ထုတ်ယူမှု အောင်မြင်ပါပြီ!", 
+        exportError: "ထုတ်ယူမှု မအောင်မြင်ပါ! အမှား:", 
+        saveError: "တင်ရန် မအောင်မြင်ပါ!\n\n【အမှားအယွင်း】: {error}\n\nကွန်ရက်ချိတ်ဆက်မှုကို စစ်ဆေးပါ။"
+      }
     };
 
     let currentLang = 'cn';
+    
     function t(key, params = {}) {
       let text = translations[currentLang][key] || translations.cn[key] || key;
-      for (const [param, value] of Object.entries(params)) text = text.replace(`{${param}}`, value);
+      for (const [param, value] of Object.entries(params)) {
+        text = text.replace(`{${param}}`, value);
+      }
       return text;
     }
 
-    // --- 数据获取与缓存 ---
-    async function fetchGoogleSheetData(forceRefresh = false) {
-      if (sheetDataCache && !forceRefresh) {
-        return sheetDataCache;
-      }
-      try {
-        const response = await fetch(GOOGLE_SCRIPT_URL);
-        // 检查返回是否为JSON，如果不是，则通常是权限问题或浏览器拦截
-        const contentType = response.headers.get("content-type");
-        if (!response.ok || !contentType || !contentType.includes("application/json")) {
-            // 如果返回的不是JSON，说明连接被拦截或脚本没运行
-            throw new Error(`Cloud fetch failed. Status: ${response.status}`);
-        }
-        const data = await response.json();
-        sheetDataCache = data;
-        return data;
-      } catch (error) {
-        console.error("Fetch error:", error);
-        return []; 
-      }
-    }
-
-    async function uploadToGoogleSheet(items) {
-      // 使用 no-cors 模式，这样浏览器就不会拦截来自谷歌的回执，但会让我们无法知道谷歌是否真的“收到”了
-      // 由于你已经验证了数据可以进去，我们继续使用这个模式确保连接稳定
-      await fetch(GOOGLE_SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors', 
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ items: items })
-      });
-      // 假设发送成功，更新本地缓存
-      return { status: 'success' };
-    }
-
-    async function updateCounters() {
-      try {
-        const data = await fetchGoogleSheetData();
-        document.getElementById('totalCount').textContent = data.length || "-";
-      } catch (e) {
-        document.getElementById('totalCount').textContent = "-";
-      }
-    }
-    
-    // --- UI 和事件逻辑 ---
-
+    // --- UI 逻辑 ---
     document.querySelectorAll('.nav-link').forEach(link => {
       link.addEventListener('click', function(e) {
         e.preventDefault();
-        document.querySelectorAll('.nav-link').forEach(item => item.classList.remove('active'));
+        document.querySelectorAll('.nav-link').forEach(item => {
+          item.classList.remove('active');
+        });
         this.classList.add('active');
-        document.querySelectorAll('.page-container').forEach(page => page.classList.remove('active'));
-        document.getElementById(this.getAttribute('data-page')).classList.add('active');
-        if (this.getAttribute('data-page') === 'searchPage') displaySearchHistory();
+        const targetPage = this.getAttribute('data-page');
+        document.querySelectorAll('.page-container').forEach(page => {
+          page.classList.remove('active');
+        });
+        document.getElementById(targetPage).classList.add('active');
+        if (targetPage === 'searchPage') {
+          displaySearchHistory();
+        }
       });
     });
 
     function setLanguage(lang) {
       currentLang = lang;
       localStorage.setItem('preferredLanguage', lang);
-      document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-lang') === lang));
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+      });
       translatePage();
     }
+    
     function translatePage() {
       document.querySelectorAll('[data-translate]').forEach(el => {
         const key = el.getAttribute('data-translate');
-        if (translations[currentLang][key]) el.textContent = translations[currentLang][key];
+        if (translations[currentLang][key]) {
+          el.textContent = translations[currentLang][key];
+        }
       });
       document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
         const key = el.getAttribute('data-translate-placeholder');
-        if (translations[currentLang][key]) el.placeholder = translations[currentLang][key];
+        if (translations[currentLang][key]) {
+          el.placeholder = translations[currentLang][key];
+        }
       });
+      
+      const exportBtnSpan = document.getElementById('exportExcelBtn')?.querySelector('span');
+      if (exportBtnSpan) {
+          exportBtnSpan.textContent = t('exportBtn');
+      }
+      
       displaySearchHistory();
     }
-    function getSearchHistory() { try { return JSON.parse(localStorage.getItem('searchHistory')) || []; } catch { return []; } }
-    function saveSearchHistory(h) { localStorage.setItem('searchHistory', JSON.stringify(h)); }
+
+    function getSearchHistory() {
+      try {
+        const history = localStorage.getItem('searchHistory');
+        const records = history ? JSON.parse(history) : [];
+        return Array.isArray(records) ? records : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveSearchHistory(history) {
+      localStorage.setItem('searchHistory', JSON.stringify(history));
+    }
+
     function displaySearchHistory() {
-      const h = getSearchHistory();
-      const c = document.getElementById('searchHistory');
-      c.innerHTML = '';
+      const history = getSearchHistory();
+      const historyContainer = document.getElementById('searchHistory');
+      historyContainer.innerHTML = '';
+      
       document.getElementById('clearHistory').querySelector('span').textContent = t('clearHistory');
-      if (h.length === 0) { c.innerHTML = `<p style="color:#78909c; text-align:center;">${t('noHistory')}</p>`; return; }
-      h.forEach(item => {
+      
+      if (history.length === 0) {
+        historyContainer.innerHTML = `<p style="color:#78909c; text-align:center;">${t('noHistory')}</p>`;
+        return;
+      }
+      
+      history.forEach(item => {
         const tag = document.createElement('div');
         tag.className = 'search-tag';
         tag.innerHTML = `${item.term} <i class="fas fa-clock"></i> ${item.time}`;
-        tag.addEventListener('click', () => { document.getElementById('searchKey').value = item.term; document.getElementById('searchBtn').click(); });
-        c.appendChild(tag);
+        tag.addEventListener('click', () => {
+          document.getElementById('searchKey').value = item.term;
+          document.getElementById('searchBtn').click();
+        });
+        historyContainer.appendChild(tag);
       });
     }
-    document.getElementById('clearHistory').addEventListener('click', () => { if (confirm(t('clearConfirm'))) { saveSearchHistory([]); displaySearchHistory(); } });
 
+    document.getElementById('clearHistory').addEventListener('click', function() {
+      if (confirm(t('clearConfirm'))) {
+        saveSearchHistory([]);
+        displaySearchHistory();
+      }
+    });
 
-    // 上传按钮逻辑 (恢复了重复检查)
+    // ======================================================================
+    // ** 2. 核心数据操作 (使用 JSONBin)**
+    // ======================================================================
+
+    /**
+     * 辅助函数：从 JSONBin 读取数据
+     */
+    async function fetchBinData() {
+        try {
+            // 添加 /latest 确保获取最新版
+            const response = await fetch(`${BIN_URL}/latest`, {
+                headers: {
+                    'X-Master-Key': API_KEY
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`API Error: ${response.status}`);
+            }
+
+            const json = await response.json();
+            // JSONBin v3 返回的数据在 record 字段中
+            // 如果是第一次创建或数据为空，可能 record 是空的，我们默认返回 []
+            if (json.record && Array.isArray(json.record)) {
+                return json.record;
+            } else {
+                return []; // 初始化为空数组
+            }
+        } catch (error) {
+            console.error("Fetch Error:", error);
+            throw error;
+        }
+    }
+
+    /**
+     * 辅助函数：保存数据到 JSONBin (全量覆盖)
+     */
+    async function saveBinData(data) {
+        const response = await fetch(BIN_URL, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': API_KEY
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Save Error: ${response.status}`);
+        }
+        return await response.json();
+    }
+
+    /**
+     * 更新页面上的总数计数器
+     */
+    async function updateCounters() {
+        try {
+            const data = await fetchBinData();
+            document.getElementById('totalCount').textContent = data.length;
+        } catch (e) {
+            document.getElementById('totalCount').textContent = "-";
+        }
+    }
+
+    // --- 核心上传功能 (集成 JSONBin) ---
     document.getElementById('uploadBtn').addEventListener('click', async function(){
       const uploader = document.getElementById('uploader').value.trim();
       const text = document.getElementById('trackingNumbers').value.trim();
       const uploadBtn = this;
 
-      if (!uploader) { alert(t('locationRequired')); return; }
-      if (!text) { alert(t('numbersRequired')); return; }
+      if (!uploader) {
+        alert(t('locationRequired'));
+        return;
+      }
+      
+      if (!text) {
+        alert(t('numbersRequired'));
+        return;
+      }
       
       let numbers = text.split('\n').map(s => s.trim()).filter(s => s);
-      numbers = [...new Set(numbers)]; 
-      if (numbers.length === 0) { alert(t('numbersRequired')); return; }
+      numbers = [...new Set(numbers)]; // 去除同一批内的重复
+      
+      if (numbers.length === 0) {
+          alert(t('numbersRequired'));
+          return;
+      }
 
       uploadBtn.disabled = true;
-      uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在检查并同步...';
+      uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在同步云端...';
+
+      let newCount = 0;
+      const duplicates = [];
+      const now = new Date().toLocaleString();
 
       try {
-        // 1. 从缓存或云端获取所有数据进行重复检查 (速度瓶颈在此，但为了准确性必须做)
-        const currentData = await fetchGoogleSheetData(true); // 强制刷新获取最新数据
-        const existingNumbers = new Set(currentData.map(r => String(r.number)));
-        
-        const newItems = [];
-        const duplicates = [];
-        const now = new Date().toLocaleString();
+          // 1. 读取当前云端数据
+          const currentData = await fetchBinData();
+          
+          // 2. 检查重复
+          // 提取所有已存在的单号用于快速比对
+          const existingNumbers = new Set(currentData.map(r => r.number));
 
-        for (const num of numbers) {
-          if (existingNumbers.has(num)) {
-            duplicates.push(num);
-          } else {
-            newItems.push({ number: num, uploader: uploader, upload_time: now });
+          // 3. 准备新数据
+          const newDataList = [];
+          for (const number of numbers) {
+              if (existingNumbers.has(number)) {
+                  duplicates.push(number);
+              } else {
+                  newDataList.push({
+                      number: number,
+                      uploader: uploader,
+                      upload_time: now
+                  });
+              }
           }
-        }
-        
-        // 2. 上传新数据
-        if (newItems.length > 0) {
-            await uploadToGoogleSheet(newItems);
-            
+          
+          // 4. 如果有新数据，合并并保存
+          if (newDataList.length > 0) {
+              // 将新数据追加到旧数据后面
+              // 为了显示方便，您可以选择把它放在最前面，这里我们追加到后面
+              const updatedData = [...currentData, ...newDataList];
+              
+              await saveBinData(updatedData);
+              newCount = newDataList.length;
+          }
+
+          // 5. 反馈结果
+          if (newCount > 0) {
             uploadBtn.innerHTML = `<i class="fas fa-check"></i> ${t('saveSuccess')}`;
             uploadBtn.style.animation = 'success 1.5s';
             
@@ -276,38 +884,49 @@
               uploadBtn.style.animation = '';
             }, 2000);
             
-            alert(t('saveSuccessWithDuplicates', { count: newItems.length, duplicates: duplicates.length > 0 ? duplicates.join(', ') : "无" }));
-            
-            // 3. 更新缓存和计数器
-            sheetDataCache = [...currentData, ...newItems]; // 快速更新缓存，不用重新下载
-        } else {
-            alert(t('saveDuplicatesOnly'));
-        }
-        
-        document.getElementById('trackingNumbers').value = '';
-        updateCounters(); // 更新总数
+            if (duplicates.length > 0) {
+                alert(t('saveSuccessWithDuplicates', {
+                    count: newCount,
+                    uploader: uploader,
+                    duplicates: duplicates.join(', ')
+                }));
+            } else {
+                alert(t('saveSuccess') + t('saveSuccessWithDuplicates', {count: newCount, uploader: uploader, duplicates: ""}).split('\n')[0]);
+            }
+          } else {
+            alert(t('saveDuplicatesOnly', {
+              uploader: uploader,
+              duplicates: duplicates.join(', ')
+            }));
+          }
+          
+          document.getElementById('trackingNumbers').value = '';
+          updateCounters(); // 更新总数
 
       } catch (error) {
         console.error('Upload failed:', error);
-        alert(t('saveError')); 
+        alert(t('saveError', { error: error.message || "Network Error" })); 
+      
       } finally {
+        uploadBtn.disabled = false;
         if (!uploadBtn.style.animation) {
-            uploadBtn.disabled = false;
-            uploadBtn.innerHTML = `<i class="fas fa-upload"></i> ${t('uploadBtn')}`;
-        } else {
-             setTimeout(() => { uploadBtn.disabled = false; }, 2000);
+             uploadBtn.innerHTML = `<i class="fas fa-upload"></i> ${t('uploadBtn')}`;
         }
       }
     });
 
-    // 搜索按钮逻辑 (使用缓存，速度提升)
+    // --- 核心搜索功能 (集成 JSONBin) ---
     document.getElementById('searchBtn').addEventListener('click', async function(){
       const key = document.getElementById('searchKey').value.trim();
       const resultsDiv = document.getElementById('searchResults');
       const searchBtn = this;
       
       resultsDiv.innerHTML = "";
-      if (key.length < 4) { alert(t('minDigits')); return; }
+      
+      if (key.length < 4) {
+        alert(t('minDigits'));
+        return;
+      }
       
       const loader = document.getElementById('searchLoader');
       searchBtn.disabled = true;
@@ -315,20 +934,17 @@
       loader.style.display = 'block'; 
 
       try {
-        // 从缓存中获取数据，如果是第一次搜索，会自动下载（慢一次）
-        const allData = await fetchGoogleSheetData(); 
+        // 1. 获取最新数据
+        const allData = await fetchBinData();
+        
+        // 2. 本地筛选 (结尾匹配)
+        // 将所有记录按时间倒序排列 (假设新添加的在后面，我们反转数组来显示最新的)
+        const matched = allData
+            .filter(rec => rec.number && String(rec.number).endsWith(key))
+            .reverse(); // 让最新的显示在最前面
         
         loader.style.display = 'none';
 
-        if (!allData || allData.length === 0) {
-            resultsDiv.innerHTML = `<div class="no-results" style="color: var(--error);">无法加载数据。请尝试刷新页面或检查浏览器设置。</div>`;
-            return;
-        }
-
-        const matched = allData
-            .filter(rec => rec.number && String(rec.number).endsWith(key))
-            .reverse(); 
-        
         if (matched.length === 0) {
           resultsDiv.innerHTML = `<div class="no-results">${t('noResults')}</div>`;
         } else {
@@ -338,81 +954,118 @@
             div.innerHTML = `
               <div><strong>${t('recordNumber')}：</strong>${rec.number}</div>
               <div><strong>${t('recordLocation')}：</strong>${rec.uploader}</div>
-              <div><strong>${t('recordTime')}：：</strong>${rec.upload_time}</div> 
+              <div><strong>${t('recordTime')}：</strong>${rec.upload_time}</div> 
             `;
             resultsDiv.appendChild(div);
           });
         }
         
-        // 历史记录
+        // 保存搜索历史
         const history = getSearchHistory();
         const now = new Date().toLocaleTimeString();
         const existingIndex = history.findIndex(item => item.term === key);
-        if (existingIndex !== -1) { history.splice(existingIndex, 1); }
+        if (existingIndex !== -1) {
+          history.splice(existingIndex, 1);
+        }
         history.unshift({ term: key, time: now });
-        if (history.length > 5) { history.pop(); }
+        if (history.length > 5) { 
+          history.pop();
+        }
         saveSearchHistory(history);
         displaySearchHistory();
 
       } catch (error) {
         loader.style.display = 'none';
-        resultsDiv.innerHTML = `<div class="no-results" style="color: var(--error);">查询失败/Search Failed<br><small>请尝试刷新页面或使用下方GitHub Pages方案</small></div>`;
+        resultsDiv.innerHTML = `<div class="no-results" style="color: var(--error);">数据查询失败: ${error.message}</div>`;
       } finally {
         searchBtn.disabled = false;
         searchBtn.innerHTML = `<i class="fas fa-search"></i> ${t('searchBtn')}`;
       }
     });
 
-    // 导出 Excel 逻辑 (使用缓存，速度提升)
-    document.getElementById('exportExcelBtn').addEventListener('click', async function() {
-        const exportBtn = this;
+    // --- 核心导出功能 (集成 JSONBin) ---
+    async function exportToCSV() {
+        const exportBtn = document.getElementById('exportExcelBtn');
+
         exportBtn.disabled = true;
         exportBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('exporting')}`;
 
         try {
-            const allRecords = await fetchGoogleSheetData(); // 从缓存中获取
-            if (allRecords.length === 0) { alert(t('noResults')); return; }
-
-            const headers = [t('recordNumber'), t('recordLocation'), t('recordTime')];
-            const csvRows = [headers.join(',')];
+            const allRecords = await fetchBinData();
             
+            if (allRecords.length === 0) {
+                alert(t('noResults'));
+                return;
+            }
+
+            // CSV 表头
+            const headers = [
+                t('recordNumber'), 
+                t('recordLocation'), 
+                t('recordTime')
+            ];
+            
+            const csvRows = [];
+            csvRows.push(headers.join(',')); 
+            
+            // CSV 内容 (倒序导出，最新的在上面)
             [...allRecords].reverse().forEach(record => {
                 const escapeCsv = (str) => {
                     const s = String(str || ''); 
-                    if (s.includes(',') || s.includes('\n') || s.includes('"')) { return `"${s.replace(/"/g, '""')}"`; }
+                    if (s.includes(',') || s.includes('\n') || s.includes('"')) {
+                        return `"${s.replace(/"/g, '""')}"`;
+                    }
                     return s;
                 };
-                const row = [escapeCsv(record.number), escapeCsv(record.uploader), escapeCsv(record.upload_time)];
+                
+                const row = [
+                    escapeCsv(record.number),
+                    escapeCsv(record.uploader),
+                    escapeCsv(record.upload_time)
+                ];
                 csvRows.push(row.join(','));
             });
+
             const csvString = csvRows.join('\n');
             const BOM = "\uFEFF"; 
             const blob = new Blob([BOM + csvString], { type: 'text/csv;charset=utf-8;' });
+            
             const a = document.createElement('a');
             const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
             a.href = URL.createObjectURL(blob);
-            a.download = `tracking_data_${date}.csv`;
+            a.download = `tracking_records_${date}.csv`;
+            
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+            
             alert(t('exportSuccess'));
+
         } catch (error) {
+            console.error('导出失败:', error);
             alert(t('exportError') + error.message);
         } finally {
             exportBtn.disabled = false;
-            exportBtn.innerHTML = `<i class="fas fa-file-excel"></i> <span>${t('exportBtn')}</span>`;
+            exportBtn.innerHTML = `<i class="fas fa-file-excel"></i> <span data-translate="exportBtn">${t('exportBtn')}</span>`;
         }
-    });
-
+    }
 
     // 初始化
     document.addEventListener('DOMContentLoaded', () => {
       const savedLang = localStorage.getItem('preferredLanguage') || 'cn';
       setLanguage(savedLang);
-      updateCounters();
+      
+      displaySearchHistory();
+      updateCounters(); // 首次加载更新总数
+      
       document.querySelectorAll('.lang-btn').forEach(btn => {
-        btn.addEventListener('click', function() { setLanguage(this.getAttribute('data-lang')); });
+        btn.addEventListener('click', function() {
+          setLanguage(this.getAttribute('data-lang'));
+        });
       });
+      
+      document.getElementById('exportExcelBtn').addEventListener('click', exportToCSV);
     });
   </script>
 </body>
