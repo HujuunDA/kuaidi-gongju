@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>快递单号管理与同步系统 (Firebase 强力版)</title>
+  <title>快递单号管理系统 (极速兼容版)</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+Myanmar:wght@400;700&display=swap" rel="stylesheet">
   
   <style>
-    /* CSS 样式：完全保留你的原始设计 */
+    /* 保持 Apple 简约风格 */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root { --primary: #3f51b5; --primary-light: #5c6bc0; --primary-dark: #303f9f; --accent: #ff4081; --light: #f8fafc; --dark: #1a237e; --success: #4caf50; --error: #f44336; --gray: #78909c; --shadow: 0 4px 20px rgba(0, 0, 0, 0.1); --transition: all 0.3s ease; }
-    body { font-family: 'Noto Sans SC', 'Noto Sans Myanmar', 'Segoe UI', sans-serif; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); color: var(--dark); line-height: 1.6; min-height: 100vh; padding: 0; }
+    body { font-family: 'Noto Sans SC', 'Noto Sans Myanmar', sans-serif; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); color: var(--dark); line-height: 1.6; min-height: 100vh; padding: 0; }
     .container { max-width: 900px; margin: 0 auto; padding: 20px; }
     nav { background: rgba(255, 255, 255, 0.95); border-radius: 50px; max-width: 500px; margin: 30px auto; padding: 10px; box-shadow: var(--shadow); backdrop-filter: blur(5px); }
     .nav-list { display: flex; justify-content: space-around; list-style: none; }
@@ -24,9 +24,12 @@
     h2:after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 80px; height: 4px; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 2px; }
     .form-group { margin-bottom: 25px; }
     label { display: block; margin-bottom: 10px; font-weight: 500; color: var(--primary-dark); }
-    input, textarea { width: 100%; padding: 15px; border: 2px solid #e8eaf6; border-radius: 12px; font-size: 1rem; background: #f8fafc; }
+    input, textarea { width: 100%; padding: 15px; border: 2px solid #e8eaf6; border-radius: 12px; font-size: 1rem; background: #f8fafc; outline: none; transition: border 0.3s; }
+    input:focus { border-color: var(--primary); }
+    textarea { height: 150px; resize: vertical; }
     .btn { display: block; width: 100%; padding: 16px; background: linear-gradient(90deg, var(--primary), var(--primary-light)); color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: var(--transition); }
-    .record { background: var(--light); border-radius: 15px; padding: 20px; margin-bottom: 15px; border-left: 4px solid var(--primary); }
+    .btn:active { transform: scale(0.98); }
+    .record { background: var(--light); border-radius: 15px; padding: 20px; margin-bottom: 15px; border-left: 4px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); animation: fadeIn 0.3s ease; }
     .status-indicator { display: flex; justify-content: center; margin-bottom: 20px; gap: 20px; flex-wrap: wrap; }
     .status-item { background: rgba(255, 255, 255, 0.7); padding: 8px 15px; border-radius: 20px; font-size: 0.9rem; }
     .search-tag { display: inline-block; background: white; border: 1px solid var(--primary-light); border-radius: 20px; padding: 8px 16px; margin: 0 8px 8px 0; font-size: 0.9rem; cursor: pointer; }
@@ -38,16 +41,12 @@
 <body>
   <div class="container">
     <div class="status-indicator">
+      <div class="status-item"><i class="fas fa-box"></i> <span data-translate="totalCount">已存单号</span>: <span id="totalCount">...</span></div>
       <div class="status-item">
-        <i class="fas fa-box"></i> <span data-translate="totalCount">已存单号</span>: <span id="totalCount">...</span>
+        <button id="exportExcelBtn" style="background:none; border:none; color:var(--primary); cursor:pointer;"><i class="fas fa-file-excel"></i> <span data-translate="exportBtn">导出</span></button>
       </div>
       <div class="status-item">
-        <button id="exportExcelBtn" style="background:none; border:none; color:var(--primary); cursor:pointer;">
-            <i class="fas fa-file-excel"></i> <span data-translate="exportBtn">导出 Excel</span>
-        </button>
-      </div>
-      <div class="status-item">
-        <button class="lang-btn" data-lang="cn">中文</button> / <button class="lang-btn" data-lang="mm">မြန်မာ</button>
+        <span class="lang-btn" data-lang="cn" style="cursor:pointer">中文</span> / <span class="lang-btn" data-lang="mm" style="cursor:pointer">မြန်မာ</span>
       </div>
     </div>
     
@@ -60,7 +59,7 @@
     
     <div id="uploadPage" class="page-container active">
       <div class="page">
-        <h2><span data-translate="uploadTitle">快递单号上传</span></h2>
+        <h2><span data-translate="uploadTitle">单号上传</span></h2>
         <div class="form-group">
           <label><span data-translate="uploadLocation">上传地点</span>：</label>
           <input type="text" id="uploader" data-translate-placeholder="uploaderPlaceholder" />
@@ -69,18 +68,18 @@
           <label><span data-translate="trackingNumbers">快递单号</span>：</label>
           <textarea id="trackingNumbers" data-translate-placeholder="trackingNumbersPlaceholder"></textarea>
         </div>
-        <button id="uploadBtn" class="btn"><span data-translate="uploadBtn">上传快递单号</span></button>
+        <button id="uploadBtn" class="btn"><span data-translate="uploadBtn">上传</span></button>
       </div>
     </div>
     
     <div id="searchPage" class="page-container">
       <div class="page">
-        <h2><span data-translate="searchTitle">快递单号查询</span></h2>
+        <h2><span data-translate="searchTitle">单号查询</span></h2>
         <div class="form-group">
-          <label><span data-translate="searchLabel">输入后4位数字</span>：</label>
+          <label><span data-translate="searchLabel">输入单号 (全号或后4位)</span>：</label>
           <input type="text" id="searchKey" data-translate-placeholder="searchPlaceholder" />
         </div>
-        <button id="searchBtn" class="btn"><span data-translate="searchBtn">开始搜索</span></button>
+        <button id="searchBtn" class="btn"><span data-translate="searchBtn">搜索</span></button>
         <div class="loader" id="searchLoader"></div>
         <div id="searchHistory" style="margin-top: 15px;"></div>
         <div id="searchResults" style="margin-top: 20px;"></div>
@@ -92,7 +91,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 
   <script>
-    // 1. Firebase 配置 (已填入你提供的参数)
     const firebaseConfig = {
       apiKey: "AIzaSyAlPdadUk-zBlBLMJFL-UYDEq8xYUKzfD4",
       authDomain: "antkuaidi.firebaseapp.com",
@@ -107,10 +105,9 @@
     const db = firebase.database();
     const recordsRef = db.ref('tracking_records');
 
-    // 2. 翻译字典 (完全保留原版)
     const translations = {
-      cn: { totalCount: "已存单号", uploadNav: "单号上传", searchNav: "单号查询", uploadTitle: "快递单号上传", uploadLocation: "上传地点", uploaderPlaceholder: "请输入地点", trackingNumbers: "快递单号", trackingNumbersPlaceholder: "每行一个", uploadBtn: "上传快递单号", searchTitle: "快递单号查询", searchLabel: "输入后4位数字", searchPlaceholder: "例如：7890", searchBtn: "开始搜索", noResults: "未找到记录", saveSuccess: "上传成功！", exportBtn: "导出 Excel", minDigits: "请输入4位数字" },
-      mm: { totalCount: "ကုဒ်နံပါတ်များ", uploadNav: "တင်ရန်", searchNav: "ရှာရန်", uploadTitle: "ကုဒ် ထဲရန်", uploadLocation: "တင်သည့်နေရာ", uploaderPlaceholder: "နေရာ ထည့်ပါ", trackingNumbers: "ကုဒ်များ", trackingNumbersPlaceholder: "တစ်ကြောင်းတစ်ခု", uploadBtn: "ကုဒ် ထဲ့ရန်", searchTitle: "ကုဒ် ရှာရန်", searchLabel: "နံပါတ် ၄ လုံး ထည့်ပါ", searchPlaceholder: "ဥပမာ: 7890", searchBtn: "ရှာဖွေရန်", noResults: "မရှိပါ", saveSuccess: "အောင်မြင်ပါပြီ!", exportBtn: "Excel ထုတ်ရန်", minDigits: "၄ လုံး ထည့်ပါ" }
+      cn: { totalCount: "已存单号", uploadNav: "上传", searchNav: "查询", uploadTitle: "单号上传", uploadLocation: "地点", uploaderPlaceholder: "输入地点", trackingNumbers: "快递单号", trackingNumbersPlaceholder: "每行一个单号", uploadBtn: "上传", searchTitle: "单号查询", searchLabel: "输入单号 (全号或后4位)", searchPlaceholder: "输入单号进行查询", searchBtn: "搜索", noResults: "无结果", saveSuccess: "上传成功", exportBtn: "导出 Excel", minDigits: "最少输入4位" },
+      mm: { totalCount: "ကုဒ်နံပါတ်များ", uploadNav: "တင်ရန်", searchNav: "ရှာရန်", uploadTitle: "ကုဒ် ထဲရန်", uploadLocation: "နေရာ", uploaderPlaceholder: "နေရာ ထည့်ပါ", trackingNumbers: "ကုဒ်များ", trackingNumbersPlaceholder: "တစ်ကြောင်းတစ်ခု", uploadBtn: "တင်မည်", searchTitle: "ကုဒ် ရှာရန်", searchLabel: "နံပါတ် (သို့) နောက်ဆုံး ၄ လုံး", searchPlaceholder: "ရှာဖွေရန် ထည့်ပါ", searchBtn: "ရှာဖွေရန်", noResults: "မရှိပါ", saveSuccess: "အောင်မြင်ပါပြီ", exportBtn: "Excel ထုတ်ရန်", minDigits: "၄ လုံး အနည်းဆုံး ထည့်ပါ" }
     };
 
     let currentLang = localStorage.getItem('preferredLanguage') || 'cn';
@@ -121,106 +118,102 @@
       document.querySelectorAll('[data-translate-placeholder]').forEach(el => el.placeholder = t(el.getAttribute('data-translate-placeholder')));
     }
 
-    // 3. 核心功能：自动更新总数
     recordsRef.on('value', snap => {
       document.getElementById('totalCount').textContent = snap.val() ? Object.keys(snap.val()).length : 0;
     });
 
-    // 4. 上传功能 (Firebase 版)
     document.getElementById('uploadBtn').addEventListener('click', async function() {
       const uploader = document.getElementById('uploader').value.trim();
       const text = document.getElementById('trackingNumbers').value.trim();
       if (!uploader || !text) return alert(t('uploaderPlaceholder'));
-
       this.disabled = true;
       const nums = [...new Set(text.split('\n').map(s => s.trim()).filter(s => s))];
       const now = new Date().toLocaleString();
-
       try {
         const snap = await recordsRef.once('value');
-        const existing = Object.values(snap.val() || {}).map(r => r.number);
-        
+        const existing = snap.val() ? Object.values(snap.val()).map(r => String(r.number)) : [];
         for (let num of nums) {
           if (!existing.includes(num)) {
-            await recordsRef.push({ number: num, uploader: uploader, upload_time: now });
+            const last4 = num.length >= 4 ? num.slice(-4) : num;
+            await recordsRef.push({ number: num, last4: last4, uploader: uploader, upload_time: now });
           }
         }
         alert(t('saveSuccess'));
         document.getElementById('trackingNumbers').value = '';
-      } finally {
-        this.disabled = false;
-      }
+      } catch (e) { alert("上传失败"); }
+      finally { this.disabled = false; }
     });
 
-    // 5. 查询功能 (完全还原搜索历史 + Firebase 查询)
+    // 关键改动：优化后的搜索逻辑
     document.getElementById('searchBtn').addEventListener('click', performSearch);
-
     async function performSearch() {
-      const key = document.getElementById('searchKey').value.trim();
-      if (key.length < 4) return alert(t('minDigits'));
+      let inputVal = document.getElementById('searchKey').value.trim();
+      if (inputVal.length < 4) return alert(t('minDigits'));
 
-      saveSearchHistory(key);
+      // 自动截取后4位用于查询
+      const queryKey = inputVal.length > 4 ? inputVal.slice(-4) : inputVal;
+
+      saveSearchHistory(inputVal);
       const resDiv = document.getElementById('searchResults');
       resDiv.innerHTML = "";
       document.getElementById('searchLoader').style.display = 'block';
 
-      const snap = await recordsRef.once('value');
-      const allData = snap.val() || {};
-      const matched = Object.values(allData).filter(r => String(r.number).endsWith(key));
+      try {
+        // 利用索引极速定位后4位匹配的数据
+        const snap = await recordsRef.orderByChild('last4').equalTo(queryKey).once('value');
+        const data = snap.val() || {};
+        let results = Object.values(data);
 
-      document.getElementById('searchLoader').style.display = 'none';
-      if (matched.length === 0) {
-        resDiv.innerHTML = `<div class="record">${t('noResults')}</div>`;
-      } else {
-        matched.reverse().forEach(r => {
-          const div = document.createElement('div');
-          div.className = 'record';
-          div.innerHTML = `<div><strong>单号:</strong> ${r.number}</div>
-                           <div><strong>地点:</strong> ${r.uploader}</div>
-                           <div><strong>时间:</strong> ${r.upload_time}</div>`;
-          resDiv.appendChild(div);
-        });
+        // 如果用户输入了长号，在本地进行精准比对
+        if (inputVal.length > 4) {
+          results = results.filter(item => String(item.number).includes(inputVal));
+        }
+
+        document.getElementById('searchLoader').style.display = 'none';
+        if (results.length === 0) {
+          resDiv.innerHTML = `<div class="record">${t('noResults')}</div>`;
+        } else {
+          results.reverse().forEach(r => {
+            const div = document.createElement('div');
+            div.className = 'record';
+            div.innerHTML = `<div><strong>单号:</strong> ${r.number}</div>
+                             <div><strong>地点:</strong> ${r.uploader}</div>
+                             <div><strong>时间:</strong> ${r.upload_time}</div>`;
+            resDiv.appendChild(div);
+          });
+        }
+      } catch (e) {
+        document.getElementById('searchLoader').style.display = 'none';
+        alert("查询失败");
       }
     }
 
-    // 6. 导出 Excel (完全还原原版导出逻辑)
     document.getElementById('exportExcelBtn').addEventListener('click', async function() {
       const snap = await recordsRef.once('value');
       const data = snap.val();
-      if (!data) return alert(t('noResults'));
-
+      if (!data) return;
       let csv = "\uFEFF单号,地点,时间\n";
-      Object.values(data).reverse().forEach(r => {
-        csv += `${r.number},${r.uploader},${r.upload_time}\n`;
-      });
-
+      Object.values(data).reverse().forEach(r => { csv += `${r.number},${r.uploader},${r.upload_time}\n`; });
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `records_${new Date().getTime()}.csv`;
+      a.download = `快递_${new Date().toLocaleDateString()}.csv`;
       a.click();
     });
 
-    // 7. 搜索历史逻辑 (完全还原原版)
     function saveSearchHistory(key) {
       let history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
       history = [key, ...history.filter(i => i !== key)].slice(0, 5);
       localStorage.setItem('searchHistory', JSON.stringify(history));
       displayHistory();
     }
-
     function displayHistory() {
       const container = document.getElementById('searchHistory');
       const history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
       container.innerHTML = history.map(h => `<span class="search-tag" onclick="fillSearch('${h}')">${h}</span>`).join('');
     }
+    window.fillSearch = function(val) { document.getElementById('searchKey').value = val; performSearch(); };
 
-    window.fillSearch = function(val) {
-      document.getElementById('searchKey').value = val;
-      performSearch();
-    };
-
-    // 8. 页面切换逻辑
     document.querySelectorAll('.nav-link').forEach(l => {
       l.addEventListener('click', function(e) {
         e.preventDefault();
@@ -230,7 +223,6 @@
       });
     });
 
-    // 9. 语言切换
     document.querySelectorAll('.lang-btn').forEach(btn => {
       btn.addEventListener('click', function() {
         currentLang = this.dataset.lang;
@@ -239,7 +231,6 @@
       });
     });
 
-    // 初始化页面
     translatePage();
     displayHistory();
   </script>
