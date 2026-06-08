@@ -144,14 +144,10 @@
       finally { this.disabled = false; }
     });
 
-    // 关键改动：优化后的搜索逻辑
     document.getElementById('searchBtn').addEventListener('click', performSearch);
     async function performSearch() {
       let inputVal = document.getElementById('searchKey').value.trim();
       if (inputVal.length < 4) return alert(t('minDigits'));
-
-      // 自动截取后4位用于查询
-      const queryKey = inputVal.length > 4 ? inputVal.slice(-4) : inputVal;
 
       saveSearchHistory(inputVal);
       const resDiv = document.getElementById('searchResults');
@@ -159,17 +155,27 @@
       document.getElementById('searchLoader').style.display = 'block';
 
       try {
-        // 利用索引极速定位后4位匹配的数据
-        const snap = await recordsRef.orderByChild('last4').equalTo(queryKey).once('value');
-        const data = snap.val() || {};
+        // 1. 优先使用“快的方法”（索引查询）
+        const queryKey = inputVal.length > 4 ? inputVal.slice(-4) : inputVal;
+        let snap = await recordsRef.orderByChild('last4').equalTo(queryKey).once('value');
+        let data = snap.val() || {};
         let results = Object.values(data);
 
-        // 如果用户输入了长号，在本地进行精准比对
-        if (inputVal.length > 4) {
+        // 2. 如果“快的方法”没找到结果，自动切换“慢的方法”（全量遍历）
+        if (results.length === 0) {
+          snap = await recordsRef.once('value');
+          data = snap.val() || {};
+          results = Object.values(data).filter(item => 
+            String(item.number).includes(inputVal)
+          );
+        } 
+        // 如果“快的方法”找到了，但用户输入了长号，在本地做进一步过滤
+        else if (inputVal.length > 4) {
           results = results.filter(item => String(item.number).includes(inputVal));
         }
 
         document.getElementById('searchLoader').style.display = 'none';
+        
         if (results.length === 0) {
           resDiv.innerHTML = `<div class="record">${t('noResults')}</div>`;
         } else {
