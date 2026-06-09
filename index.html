@@ -95,7 +95,8 @@
       <h2><span data-translate="searchTitle">单号查询</span> <i class="fas fa-search-location"></i></h2>
       <div class="form-group">
         <label><span data-translate="searchLabel">输入单号 (全号或后4位)</span>：</label>
-        <input type="text" id="searchKey" data-translate-placeholder="searchPlaceholder" placeholder="请输入至少4位数字/字母" />
+        <!-- 添加 inputmode="numeric" 以在移动端调出数字键盘，同时保留文本输入能力 -->
+        <input type="text" id="searchKey" inputmode="numeric" data-translate-placeholder="searchPlaceholder" placeholder="请输入至少4位数字/字母" />
       </div>
       <button id="searchBtn" class="btn"><span data-translate="searchBtn">搜索</span> <i class="fas fa-arrow-right"></i></button>
       <div id="searchHistory" style="margin-top: 15px;"></div>
