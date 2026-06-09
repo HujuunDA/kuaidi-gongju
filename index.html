@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>快递单号管理系统 · 精准高亮版</title>
+  <title>快递单号管理系统 </title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+Myanmar:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -39,7 +39,7 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .refresh-btn { background: var(--primary-light); border: none; border-radius: 20px; padding: 4px 12px; color: white; cursor: pointer; font-size: 0.8rem; transition: 0.2s; }
     .refresh-btn:hover { background: var(--primary-dark); }
-    /* 关键词高亮样式 - 只高亮匹配的部分，类似标签效果 */
+    /* 关键词高亮样式 - 只高亮匹配的部分 */
     .keyword-highlight {
       background: #ff9800;
       color: white;
@@ -56,9 +56,8 @@
 <body>
 <div class="container">
   <div class="status-indicator">
-    <div class="status-item"><i class="fas fa-box"></i> <span data-translate="totalCount">已存单号</span>: <span id="totalCount">0</span></div>
     <div class="status-item">
-      <button id="manualRefreshBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> <span data-translate="refreshBtn">手动刷新</span></button>
+      <button id="manualRefreshBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> <span data-translate="refreshBtn">刷新</span></button>
     </div>
     <div class="status-item">
       <button id="exportExcelBtn" style="background:none; border:none; color:var(--primary); cursor:pointer; font-weight:500;"><i class="fas fa-file-excel"></i> <span data-translate="exportBtn">导出</span></button>
@@ -179,7 +178,7 @@
   let memoryRecords = [];
   let isDataReady = false;
 
-  // 格式化时间：YYYY-MM-DD HH:MM:SS (年-月-日 时:分:秒)
+  // 格式化时间：YYYY-MM-DD HH:MM:SS
   function formatDateTime(dateInput) {
     let d;
     if (dateInput instanceof Date) d = dateInput;
@@ -202,7 +201,6 @@
     memoryRecords = [...recordsArray];
     memoryRecords.sort((a,b) => new Date(b.upload_time) - new Date(a.upload_time));
     await saveAllRecordsToIndexedDB(memoryRecords);
-    updateTotalCountUI();
     isDataReady = true;
   }
 
@@ -258,11 +256,6 @@
     await syncFromCloud(true);
   }
 
-  function updateTotalCountUI() {
-    const countSpan = document.getElementById('totalCount');
-    if (countSpan) countSpan.innerText = memoryRecords.length;
-  }
-
   async function initOfflineStorage() {
     try {
       const localRecords = await loadAllRecordsFromIndexedDB();
@@ -270,7 +263,6 @@
         memoryRecords = localRecords;
         memoryRecords.sort((a,b) => new Date(b.upload_time) - new Date(a.upload_time));
         isDataReady = true;
-        updateTotalCountUI();
       } else {
         await syncFromCloud(false);
       }
@@ -281,17 +273,14 @@
   }
 
   // =====================  高亮辅助函数（仅高亮匹配的关键词） =====================
-  // 转义正则特殊字符
   function escapeRegex(str) {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
-  // 对文本进行关键词高亮，返回带 HTML 标签的字符串 (关键词不区分大小写，保留原始文本大小写)
   function highlightKeyword(text, keyword) {
     if (!keyword || keyword.trim() === '') return escapeHtml(text);
     const escapedKeyword = escapeRegex(keyword);
     const regex = new RegExp(`(${escapedKeyword})`, 'gi');
-    // 先转义HTML特殊字符，再对匹配的部分包裹高亮标签
     return escapeHtml(text).replace(regex, `<span class="keyword-highlight">$1</span>`);
   }
 
@@ -328,7 +317,6 @@
       return;
     }
     matched.forEach(record => {
-      // 仅对单号中的匹配关键词进行高亮，地点和时间不高亮
       const highlightedNumber = highlightKeyword(record.number, keyword);
       const div = document.createElement('div');
       div.className = 'record';
@@ -429,23 +417,22 @@
   // =========================  多语言 =========================
   const translations = {
     cn: { 
-      totalCount: "已存单号", uploadNav: "上传", searchNav: "查询", uploadTitle: "单号上传", 
+      uploadNav: "上传", searchNav: "查询", uploadTitle: "单号上传", 
       uploadLocation: "地点", uploaderPlaceholder: "输入地点", trackingNumbers: "快递单号", 
       trackingNumbersPlaceholder: "每行一个单号", uploadBtn: "上传", searchTitle: "单号查询", 
       searchLabel: "输入单号 (全号或后4位)", searchPlaceholder: "输入单号进行查询", searchBtn: "搜索", 
-      noResults: "📭 未找到相关单号", saveSuccess: "✅ 上传成功，已同步云端", 
-      exportBtn: "导出 Excel", minDigits: "⚠️ 最少输入4位字符进行查询", 
+      noResults: "📭 未找到相关单号", exportBtn: "导出 Excel", minDigits: "⚠️ 最少输入4位字符进行查询", 
       loadingData: "数据加载中...", refreshBtn: "手动刷新", 
       syncing: "同步中...", syncSuccess: "同步成功", syncError: "同步失败"
     },
     mm: { 
-      totalCount: "ကုဒ်နံပါတ်များ", uploadNav: "တင်ရန်", searchNav: "ရှာရန်", uploadTitle: "ကုဒ် ထဲရန်", 
+      uploadNav: "တင်ရန်", searchNav: "ရှာရန်", uploadTitle: "ကုဒ် ထဲရန်", 
       uploadLocation: "နေရာ", uploaderPlaceholder: "နေရာ ထည့်ပါ", trackingNumbers: "ကုဒ်များ", 
       trackingNumbersPlaceholder: "တစ်ကြောင်းတစ်ခု", uploadBtn: "တင်မည်", searchTitle: "ကုဒ် ရှာရန်", 
       searchLabel: "နံပါတ် (သို့) နောက်ဆုံး ၄ လုံး", searchPlaceholder: "ရှာဖွေရန် ထည့်ပါ", searchBtn: "ရှာဖွေရန်", 
-      noResults: "မရှိပါ", saveSuccess: "အောင်မြင်ပါပြီ", exportBtn: "Excel ထုတ်ရန်", 
+      noResults: "မရှိပါ", exportBtn: "Excel ထုတ်ရန်", 
       minDigits: "အနည်းဆုံး ၄ လုံး ထည့်ပါ", loadingData: "ဒေတာဒေါင်းလုဒ်လုပ်နေသည်...", 
-      refreshBtn: "လက်လုပ်စင်", syncing: "ဒေတာထပ်တူပြုနေသည်...", syncSuccess: "ထပ်တူပြုခြင်းအောင်မြင်", syncError: "ထပ်တူပြုခြင်းမအောင်မြင်"
+      refreshBtn: "Update", syncing: “Updateလုပ်နေသည်...", syncSuccess: "Updateအောင်မြင်", syncError: "Updateမအောင်မြင်"
     }
   };
   let currentLang = localStorage.getItem('preferredLanguage') || 'cn';
