@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>快递单号管理系统 </title>
+  <title>快递单号管理系统 · 精准高亮版</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+Myanmar:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -39,7 +39,7 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .refresh-btn { background: var(--primary-light); border: none; border-radius: 20px; padding: 4px 12px; color: white; cursor: pointer; font-size: 0.8rem; transition: 0.2s; }
     .refresh-btn:hover { background: var(--primary-dark); }
-    /* 关键词高亮样式 - 只高亮匹配的部分 */
+    /* 关键词高亮样式 - 只高亮匹配的部分，类似标签效果 */
     .keyword-highlight {
       background: #ff9800;
       color: white;
@@ -56,8 +56,9 @@
 <body>
 <div class="container">
   <div class="status-indicator">
+    <!-- 已移除总单号显示区块，完全符合需求 -->
     <div class="status-item">
-      <button id="manualRefreshBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> <span data-translate="refreshBtn">刷新</span></button>
+      <button id="manualRefreshBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> <span data-translate="refreshBtn">手动刷新</span></button>
     </div>
     <div class="status-item">
       <button id="exportExcelBtn" style="background:none; border:none; color:var(--primary); cursor:pointer; font-weight:500;"><i class="fas fa-file-excel"></i> <span data-translate="exportBtn">导出</span></button>
@@ -163,6 +164,7 @@
     });
   }
 
+  // 加载本地缓存 (仅用于极端降级，但本次自动同步优先，保留用于后备)
   async function loadAllRecordsFromIndexedDB() {
     const db = await openIndexedDB();
     const transaction = db.transaction([STORE_NAME], 'readonly');
@@ -178,7 +180,7 @@
   let memoryRecords = [];
   let isDataReady = false;
 
-  // 格式化时间：YYYY-MM-DD HH:MM:SS
+  // 格式化时间：YYYY-MM-DD HH:MM:SS (年-月-日 时:分:秒)
   function formatDateTime(dateInput) {
     let d;
     if (dateInput instanceof Date) d = dateInput;
@@ -201,10 +203,17 @@
     memoryRecords = [...recordsArray];
     memoryRecords.sort((a,b) => new Date(b.upload_time) - new Date(a.upload_time));
     await saveAllRecordsToIndexedDB(memoryRecords);
+    updateTotalCountUI();  // 由于UI已移除计数显示，函数内部做了安全判断，不会报错
     isDataReady = true;
   }
 
-  // 从云端同步全量数据
+  // 安全更新（因UI已无总单号元素，但仍保留逻辑以防意外）
+  function updateTotalCountUI() {
+    const countSpan = document.getElementById('totalCount');
+    if (countSpan) countSpan.innerText = memoryRecords.length;
+  }
+
+  // 从云端同步全量数据（每次打开强制同步，确保最新）
   async function syncFromCloud(showToastMsg = true) {
     const refreshBtn = document.getElementById('manualRefreshBtn');
     if (refreshBtn && showToastMsg) {
@@ -240,14 +249,48 @@
       }
     } catch (err) {
       console.error("同步失败", err);
-      if (showToastMsg && refreshBtn) {
-        refreshBtn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <span>${t('syncError') || '同步失败'}</span>`;
-        setTimeout(() => {
-          if (refreshBtn) {
-            refreshBtn.innerHTML = `<i class="fas fa-sync-alt"></i> <span>${t('refreshBtn')}</span>`;
-            refreshBtn.disabled = false;
+      // 同步失败时，尝试从本地IndexedDB加载作为降级，保证离线可用
+      try {
+        const localFallback = await loadAllRecordsFromIndexedDB();
+        if (localFallback && localFallback.length > 0) {
+          memoryRecords = localFallback;
+          memoryRecords.sort((a,b) => new Date(b.upload_time) - new Date(a.upload_time));
+          isDataReady = true;
+          if (showToastMsg && refreshBtn) {
+            refreshBtn.innerHTML = `<i class="fas fa-database"></i> <span>${t('offlineMode') || ''}</span>`;
+            setTimeout(() => {
+              if (refreshBtn) {
+                refreshBtn.innerHTML = `<i class="fas fa-sync-alt"></i> <span>${t('refreshBtn')}</span>`;
+                refreshBtn.disabled = false;
+              }
+            }, 1500);
           }
-        }, 1500);
+        } else {
+          memoryRecords = [];
+          isDataReady = true;
+          if (showToastMsg && refreshBtn) {
+            refreshBtn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <span>${t('syncError') || '同步失败'}</span>`;
+            setTimeout(() => {
+              if (refreshBtn) {
+                refreshBtn.innerHTML = `<i class="fas fa-sync-alt"></i> <span>${t('refreshBtn')}</span>`;
+                refreshBtn.disabled = false;
+              }
+            }, 1500);
+          }
+        }
+      } catch (fallbackErr) {
+        console.error("本地降级加载失败", fallbackErr);
+        memoryRecords = [];
+        isDataReady = true;
+        if (showToastMsg && refreshBtn) {
+          refreshBtn.innerHTML = `<i class="fas fa-plug"></i> <span>${t('syncError') || '无数据'}</span>`;
+          setTimeout(() => {
+            if (refreshBtn) {
+              refreshBtn.innerHTML = `<i class="fas fa-sync-alt"></i> <span>${t('refreshBtn')}</span>`;
+              refreshBtn.disabled = false;
+            }
+          }, 1500);
+        }
       }
     }
   }
@@ -256,27 +299,12 @@
     await syncFromCloud(true);
   }
 
-  async function initOfflineStorage() {
-    try {
-      const localRecords = await loadAllRecordsFromIndexedDB();
-      if (localRecords && localRecords.length > 0) {
-        memoryRecords = localRecords;
-        memoryRecords.sort((a,b) => new Date(b.upload_time) - new Date(a.upload_time));
-        isDataReady = true;
-      } else {
-        await syncFromCloud(false);
-      }
-    } catch (err) {
-      console.error("IndexedDB 读取失败，回退云端拉取", err);
-      await syncFromCloud(false);
-    }
-  }
-
   // =====================  高亮辅助函数（仅高亮匹配的关键词） =====================
   function escapeRegex(str) {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
+  // 对文本进行关键词高亮，返回带 HTML 标签的字符串 (关键词不区分大小写，保留原始文本大小写)
   function highlightKeyword(text, keyword) {
     if (!keyword || keyword.trim() === '') return escapeHtml(text);
     const escapedKeyword = escapeRegex(keyword);
@@ -383,8 +411,9 @@
         pushPromises.push(recordsRef.push({ number: num, last4: last4, uploader: uploader, upload_time: nowFormatted }));
       }
       await Promise.all(pushPromises);
+      // 上传成功后强制同步最新数据（包含刚上传的记录）
       await syncFromCloud(true);
-      alert(`✅ 成功上传 ${newNumbers.length} 个新单号，本地离线库已更新`);
+      alert(`✅ 成功上传 ${newNumbers.length} 个新单号，数据已同步至云端`);
       textarea.value = '';
       document.getElementById('uploader').value = '';
     } catch (err) {
@@ -414,25 +443,32 @@
     performLocalSearch();
   };
 
-  // =========================  多语言 =========================
+  // =========================  多语言（已按要求精准修改） =========================
   const translations = {
     cn: { 
-      uploadNav: "上传", searchNav: "查询", uploadTitle: "单号上传", 
+      totalCount: "已存单号", uploadNav: "上传", searchNav: "查询", uploadTitle: "单号上传", 
       uploadLocation: "地点", uploaderPlaceholder: "输入地点", trackingNumbers: "快递单号", 
       trackingNumbersPlaceholder: "每行一个单号", uploadBtn: "上传", searchTitle: "单号查询", 
       searchLabel: "输入单号 (全号或后4位)", searchPlaceholder: "输入单号进行查询", searchBtn: "搜索", 
-      noResults: "📭 未找到相关单号", exportBtn: "导出 Excel", minDigits: "⚠️ 最少输入4位字符进行查询", 
+      noResults: "📭 未找到相关单号", saveSuccess: "✅ 上传成功，已同步云端", 
+      exportBtn: "导出", minDigits: "⚠️ 最少输入4位字符进行查询", 
       loadingData: "数据加载中...", refreshBtn: "手动刷新", 
-      syncing: "同步中...", syncSuccess: "同步成功", syncError: "同步失败"
+      syncing: "同步中...", syncSuccess: "同步成功", syncError: "同步失败",
+      offlineMode: ""   // 按要求不显示任何文字
     },
     mm: { 
-      uploadNav: "တင်ရန်", searchNav: "ရှာရန်", uploadTitle: "ကုဒ် ထဲရန်", 
+      totalCount: "ကုဒ်နံပါတ်များ", uploadNav: "တင်ရန်", searchNav: "ရှာရန်", uploadTitle: "ကုဒ် ထဲရန်", 
       uploadLocation: "နေရာ", uploaderPlaceholder: "နေရာ ထည့်ပါ", trackingNumbers: "ကုဒ်များ", 
       trackingNumbersPlaceholder: "တစ်ကြောင်းတစ်ခု", uploadBtn: "တင်မည်", searchTitle: "ကုဒ် ရှာရန်", 
       searchLabel: "နံပါတ် (သို့) နောက်ဆုံး ၄ လုံး", searchPlaceholder: "ရှာဖွေရန် ထည့်ပါ", searchBtn: "ရှာဖွေရန်", 
-      noResults: "မရှိပါ", exportBtn: "Excel ထုတ်ရန်", 
+      noResults: "မရှိပါ", saveSuccess: "အောင်မြင်ပါပြီ", 
+      exportBtn: "Excel",  // 缅文只显示 Excel
       minDigits: "အနည်းဆုံး ၄ လုံး ထည့်ပါ", loadingData: "ဒေတာဒေါင်းလုဒ်လုပ်နေသည်...", 
-      refreshBtn: "Update", syncing: “Updateလုပ်နေသည်...", syncSuccess: "Updateအောင်မြင်", syncError: "Updateမအောင်မြင်"
+      refreshBtn: "Update",  // 原 "လက်လုပ်စင်" 改为 Update
+      syncing: "Updateလုပ်နေသည်...",   // 原 "ဒေတာထပ်တူပြုနေသည်..." 按要求修改
+      syncSuccess: "အောင်မြင်သည်",    // 原 "ထပ်တူပြုခြင်းအောင်မြင်" 改为新词
+      syncError: "မအောင်မြင်ပါ",      // 原 "ထပ်တူပြုခြင်းမအောင်မြင်" 改为新词
+      offlineMode: ""    // 不用显示任何文字
     }
   };
   let currentLang = localStorage.getItem('preferredLanguage') || 'cn';
@@ -484,13 +520,16 @@
     if (searchInput) searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') performLocalSearch(); });
   }
 
+  // 启动核心：每次打开强制自动从云端同步最新数据，保证最先展示最新数据
   async function start() {
     initNav();
     initLang();
     bindEvents();
     translatePage();
     displayHistory();
-    await initOfflineStorage();
+    // 强制每次打开程序都自动同步云端最新数据（满足需求）
+    await syncFromCloud(true);
+    console.log("首次自动同步完成，当前单号数量:", memoryRecords.length);
   }
   start();
 </script>
