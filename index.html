@@ -2,13 +2,11 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>快递单号管理系统 (极速兼容版)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>快递单号管理系统 · 精准高亮版</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+Myanmar:wght@400;700&display=swap" rel="stylesheet">
-  
   <style>
-    /* 保持 Apple 简约风格 */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root { --primary: #3f51b5; --primary-light: #5c6bc0; --primary-dark: #303f9f; --accent: #ff4081; --light: #f8fafc; --dark: #1a237e; --success: #4caf50; --error: #f44336; --gray: #78909c; --shadow: 0 4px 20px rgba(0, 0, 0, 0.1); --transition: all 0.3s ease; }
     body { font-family: 'Noto Sans SC', 'Noto Sans Myanmar', sans-serif; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); color: var(--dark); line-height: 1.6; min-height: 100vh; padding: 0; }
@@ -29,216 +27,485 @@
     textarea { height: 150px; resize: vertical; }
     .btn { display: block; width: 100%; padding: 16px; background: linear-gradient(90deg, var(--primary), var(--primary-light)); color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: var(--transition); }
     .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
     .record { background: var(--light); border-radius: 15px; padding: 20px; margin-bottom: 15px; border-left: 4px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); animation: fadeIn 0.3s ease; }
-    .status-indicator { display: flex; justify-content: center; margin-bottom: 20px; gap: 20px; flex-wrap: wrap; }
-    .status-item { background: rgba(255, 255, 255, 0.7); padding: 8px 15px; border-radius: 20px; font-size: 0.9rem; }
-    .search-tag { display: inline-block; background: white; border: 1px solid var(--primary-light); border-radius: 20px; padding: 8px 16px; margin: 0 8px 8px 0; font-size: 0.9rem; cursor: pointer; }
-    .loader { display: none; width: 40px; height: 40px; margin: 20px auto; border: 4px solid rgba(63, 81, 181, 0.2); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+    .status-indicator { display: flex; justify-content: center; align-items: center; margin-bottom: 20px; gap: 20px; flex-wrap: wrap; }
+    .status-item { background: rgba(255, 255, 255, 0.7); padding: 8px 15px; border-radius: 20px; font-size: 0.9rem; backdrop-filter: blur(2px); display: inline-flex; align-items: center; gap: 8px; }
+    .search-tag { display: inline-block; background: white; border: 1px solid var(--primary-light); border-radius: 20px; padding: 8px 16px; margin: 0 8px 8px 0; font-size: 0.9rem; cursor: pointer; transition: 0.2s; }
+    .search-tag:hover { background: var(--primary-light); color: white; border-color: var(--primary-light); }
+    .loader { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(63, 81, 181, 0.2); border-top: 2px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-left: 8px; vertical-align: middle; }
+    .loader-full { display: none; width: 40px; height: 40px; margin: 20px auto; border: 4px solid rgba(63, 81, 181, 0.2); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .refresh-btn { background: var(--primary-light); border: none; border-radius: 20px; padding: 4px 12px; color: white; cursor: pointer; font-size: 0.8rem; transition: 0.2s; }
+    .refresh-btn:hover { background: var(--primary-dark); }
+    /* 关键词高亮样式 - 只高亮匹配的部分，类似标签效果 */
+    .keyword-highlight {
+      background: #ff9800;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 0.9em;
+      display: inline-block;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      letter-spacing: 0.3px;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="status-indicator">
-      <div class="status-item"><i class="fas fa-box"></i> <span data-translate="totalCount">已存单号</span>: <span id="totalCount">...</span></div>
-      <div class="status-item">
-        <button id="exportExcelBtn" style="background:none; border:none; color:var(--primary); cursor:pointer;"><i class="fas fa-file-excel"></i> <span data-translate="exportBtn">导出</span></button>
-      </div>
-      <div class="status-item">
-        <span class="lang-btn" data-lang="cn" style="cursor:pointer">中文</span> / <span class="lang-btn" data-lang="mm" style="cursor:pointer">မြန်မာ</span>
-      </div>
+<div class="container">
+  <div class="status-indicator">
+    <div class="status-item"><i class="fas fa-box"></i> <span data-translate="totalCount">已存单号</span>: <span id="totalCount">0</span></div>
+    <div class="status-item">
+      <button id="manualRefreshBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> <span data-translate="refreshBtn">手动刷新</span></button>
     </div>
-    
-    <nav>
-      <ul class="nav-list">
-        <li><a href="#" class="nav-link active" data-page="uploadPage"><i class="fas fa-upload"></i> <span data-translate="uploadNav">上传</span></a></li>
-        <li><a href="#" class="nav-link" data-page="searchPage"><i class="fas fa-search"></i> <span data-translate="searchNav">查询</span></a></li>
-      </ul>
-    </nav>
-    
-    <div id="uploadPage" class="page-container active">
-      <div class="page">
-        <h2><span data-translate="uploadTitle">单号上传</span></h2>
-        <div class="form-group">
-          <label><span data-translate="uploadLocation">上传地点</span>：</label>
-          <input type="text" id="uploader" data-translate-placeholder="uploaderPlaceholder" />
-        </div>
-        <div class="form-group">
-          <label><span data-translate="trackingNumbers">快递单号</span>：</label>
-          <textarea id="trackingNumbers" data-translate-placeholder="trackingNumbersPlaceholder"></textarea>
-        </div>
-        <button id="uploadBtn" class="btn"><span data-translate="uploadBtn">上传</span></button>
-      </div>
+    <div class="status-item">
+      <button id="exportExcelBtn" style="background:none; border:none; color:var(--primary); cursor:pointer; font-weight:500;"><i class="fas fa-file-excel"></i> <span data-translate="exportBtn">导出</span></button>
     </div>
-    
-    <div id="searchPage" class="page-container">
-      <div class="page">
-        <h2><span data-translate="searchTitle">单号查询</span></h2>
-        <div class="form-group">
-          <label><span data-translate="searchLabel">输入单号 (全号或后4位)</span>：</label>
-          <input type="text" id="searchKey" data-translate-placeholder="searchPlaceholder" />
-        </div>
-        <button id="searchBtn" class="btn"><span data-translate="searchBtn">搜索</span></button>
-        <div class="loader" id="searchLoader"></div>
-        <div id="searchHistory" style="margin-top: 15px;"></div>
-        <div id="searchResults" style="margin-top: 20px;"></div>
-      </div>
+    <div class="status-item">
+      <span class="lang-btn" data-lang="cn" style="cursor:pointer; font-weight:500;">中文</span> / <span class="lang-btn" data-lang="mm" style="cursor:pointer; font-weight:500;">မြန်မာ</span>
     </div>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+  <nav>
+    <ul class="nav-list">
+      <li><a href="#" class="nav-link active" data-page="uploadPage"><i class="fas fa-upload"></i> <span data-translate="uploadNav">上传</span></a></li>
+      <li><a href="#" class="nav-link" data-page="searchPage"><i class="fas fa-search"></i> <span data-translate="searchNav">查询</span></a></li>
+    </ul>
+  </nav>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAlPdadUk-zBlBLMJFL-UYDEq8xYUKzfD4",
-      authDomain: "antkuaidi.firebaseapp.com",
-      databaseURL: "https://antkuaidi-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "antkuaidi",
-      storageBucket: "antkuaidi.firebasestorage.app",
-      messagingSenderId: "416372968766",
-      appId: "1:416372968766:web:2b80237f2e774f1067f06f"
-    };
+  <div id="uploadPage" class="page-container active">
+    <div class="page">
+      <h2><span data-translate="uploadTitle">单号上传</span></h2>
+      <div class="form-group">
+        <label><span data-translate="uploadLocation">上传地点</span>：</label>
+        <input type="text" id="uploader" data-translate-placeholder="uploaderPlaceholder" placeholder="例如: 仰光仓库" />
+      </div>
+      <div class="form-group">
+        <label><span data-translate="trackingNumbers">快递单号</span>：</label>
+        <textarea id="trackingNumbers" data-translate-placeholder="trackingNumbersPlaceholder" placeholder="每行一个单号，自动去重"></textarea>
+      </div>
+      <button id="uploadBtn" class="btn"><span data-translate="uploadBtn">上传</span> <i class="fas fa-cloud-upload-alt"></i></button>
+    </div>
+  </div>
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const recordsRef = db.ref('tracking_records');
+  <div id="searchPage" class="page-container">
+    <div class="page">
+      <h2><span data-translate="searchTitle">单号查询</span> <i class="fas fa-search-location"></i></h2>
+      <div class="form-group">
+        <label><span data-translate="searchLabel">输入单号 (全号或后4位)</span>：</label>
+        <input type="text" id="searchKey" data-translate-placeholder="searchPlaceholder" placeholder="请输入至少4位数字/字母" />
+      </div>
+      <button id="searchBtn" class="btn"><span data-translate="searchBtn">搜索</span> <i class="fas fa-arrow-right"></i></button>
+      <div id="searchHistory" style="margin-top: 15px;"></div>
+      <div id="searchResults" style="margin-top: 20px;"></div>
+    </div>
+  </div>
+</div>
 
-    const translations = {
-      cn: { totalCount: "已存单号", uploadNav: "上传", searchNav: "查询", uploadTitle: "单号上传", uploadLocation: "地点", uploaderPlaceholder: "输入地点", trackingNumbers: "快递单号", trackingNumbersPlaceholder: "每行一个单号", uploadBtn: "上传", searchTitle: "单号查询", searchLabel: "输入单号 (全号或后4位)", searchPlaceholder: "输入单号进行查询", searchBtn: "搜索", noResults: "无结果", saveSuccess: "上传成功", exportBtn: "导出 Excel", minDigits: "最少输入4位" },
-      mm: { totalCount: "ကုဒ်နံပါတ်များ", uploadNav: "တင်ရန်", searchNav: "ရှာရန်", uploadTitle: "ကုဒ် ထဲရန်", uploadLocation: "နေရာ", uploaderPlaceholder: "နေရာ ထည့်ပါ", trackingNumbers: "ကုဒ်များ", trackingNumbersPlaceholder: "တစ်ကြောင်းတစ်ခု", uploadBtn: "တင်မည်", searchTitle: "ကုဒ် ရှာရန်", searchLabel: "နံပါတ် (သို့) နောက်ဆုံး ၄ လုံး", searchPlaceholder: "ရှာဖွေရန် ထည့်ပါ", searchBtn: "ရှာဖွေရန်", noResults: "မရှိပါ", saveSuccess: "အောင်မြင်ပါပြီ", exportBtn: "Excel ထုတ်ရန်", minDigits: "၄ လုံး အနည်းဆုံး ထည့်ပါ" }
-    };
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 
-    let currentLang = localStorage.getItem('preferredLanguage') || 'cn';
-    function t(key) { return translations[currentLang][key] || key; }
+<script>
+  // -----------------------------  Firebase 配置 ---------------------------------
+  const firebaseConfig = {
+    apiKey: "AIzaSyAlPdadUk-zBlBLMJFL-UYDEq8xYUKzfD4",
+    authDomain: "antkuaidi.firebaseapp.com",
+    databaseURL: "https://antkuaidi-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "antkuaidi",
+    storageBucket: "antkuaidi.firebasestorage.app",
+    messagingSenderId: "416372968766",
+    appId: "1:416372968766:web:2b80237f2e774f1067f06f"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const recordsRef = db.ref('tracking_records');
 
-    function translatePage() {
-      document.querySelectorAll('[data-translate]').forEach(el => el.textContent = t(el.getAttribute('data-translate')));
-      document.querySelectorAll('[data-translate-placeholder]').forEach(el => el.placeholder = t(el.getAttribute('data-translate-placeholder')));
+  // =========================  IndexedDB 封装（离线存储核心） =========================
+  const DB_NAME = 'trackingDB';
+  const STORE_NAME = 'tracking_records';
+  const DB_VERSION = 1;
+
+  let dbInstance = null;
+
+  function openIndexedDB() {
+    return new Promise((resolve, reject) => {
+      if (dbInstance) return resolve(dbInstance);
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        dbInstance = request.result;
+        resolve(dbInstance);
+      };
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+          store.createIndex('number', 'number', { unique: false });
+          store.createIndex('last4', 'last4', { unique: false });
+          store.createIndex('upload_time', 'upload_time', { unique: false });
+        }
+      };
+    });
+  }
+
+  async function saveAllRecordsToIndexedDB(records) {
+    const db = await openIndexedDB();
+    const transaction = db.transaction([STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    await store.clear();
+    for (const record of records) {
+      store.put(record);
     }
-
-    recordsRef.on('value', snap => {
-      document.getElementById('totalCount').textContent = snap.val() ? Object.keys(snap.val()).length : 0;
+    return new Promise((resolve, reject) => {
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
     });
+  }
 
-    document.getElementById('uploadBtn').addEventListener('click', async function() {
-      const uploader = document.getElementById('uploader').value.trim();
-      const text = document.getElementById('trackingNumbers').value.trim();
-      if (!uploader || !text) return alert(t('uploaderPlaceholder'));
-      this.disabled = true;
-      const nums = [...new Set(text.split('\n').map(s => s.trim()).filter(s => s))];
-      const now = new Date().toLocaleString();
-      try {
-        const snap = await recordsRef.once('value');
-        const existing = snap.val() ? Object.values(snap.val()).map(r => String(r.number)) : [];
-        for (let num of nums) {
-          if (!existing.includes(num)) {
-            const last4 = num.length >= 4 ? num.slice(-4) : num;
-            await recordsRef.push({ number: num, last4: last4, uploader: uploader, upload_time: now });
-          }
-        }
-        alert(t('saveSuccess'));
-        document.getElementById('trackingNumbers').value = '';
-      } catch (e) { alert("上传失败"); }
-      finally { this.disabled = false; }
+  async function loadAllRecordsFromIndexedDB() {
+    const db = await openIndexedDB();
+    const transaction = db.transaction([STORE_NAME], 'readonly');
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.getAll();
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
     });
+  }
 
-    document.getElementById('searchBtn').addEventListener('click', performSearch);
-    async function performSearch() {
-      let inputVal = document.getElementById('searchKey').value.trim();
-      if (inputVal.length < 4) return alert(t('minDigits'));
+  // =========================  全局内存缓存 =========================
+  let memoryRecords = [];
+  let isDataReady = false;
 
-      saveSearchHistory(inputVal);
-      const resDiv = document.getElementById('searchResults');
-      resDiv.innerHTML = "";
-      document.getElementById('searchLoader').style.display = 'block';
+  // 格式化时间：YYYY-MM-DD HH:MM:SS (年-月-日 时:分:秒)
+  function formatDateTime(dateInput) {
+    let d;
+    if (dateInput instanceof Date) d = dateInput;
+    else d = new Date(dateInput);
+    if (isNaN(d.getTime())) return String(dateInput);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const seconds = String(d.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  }
 
-      try {
-        // 1. 优先使用“快的方法”（索引查询）
-        const queryKey = inputVal.length > 4 ? inputVal.slice(-4) : inputVal;
-        let snap = await recordsRef.orderByChild('last4').equalTo(queryKey).once('value');
-        let data = snap.val() || {};
-        let results = Object.values(data);
+  function getCurrentFormattedTime() {
+    return formatDateTime(new Date());
+  }
 
-        // 2. 如果“快的方法”没找到结果，自动切换“慢的方法”（全量遍历）
-        if (results.length === 0) {
-          snap = await recordsRef.once('value');
-          data = snap.val() || {};
-          results = Object.values(data).filter(item => 
-            String(item.number).includes(inputVal)
-          );
-        } 
-        // 如果“快的方法”找到了，但用户输入了长号，在本地做进一步过滤
-        else if (inputVal.length > 4) {
-          results = results.filter(item => String(item.number).includes(inputVal));
-        }
+  async function updateLocalData(recordsArray) {
+    memoryRecords = [...recordsArray];
+    memoryRecords.sort((a,b) => new Date(b.upload_time) - new Date(a.upload_time));
+    await saveAllRecordsToIndexedDB(memoryRecords);
+    updateTotalCountUI();
+    isDataReady = true;
+  }
 
-        document.getElementById('searchLoader').style.display = 'none';
-        
-        if (results.length === 0) {
-          resDiv.innerHTML = `<div class="record">${t('noResults')}</div>`;
-        } else {
-          results.reverse().forEach(r => {
-            const div = document.createElement('div');
-            div.className = 'record';
-            div.innerHTML = `<div><strong>单号:</strong> ${r.number}</div>
-                             <div><strong>地点:</strong> ${r.uploader}</div>
-                             <div><strong>时间:</strong> ${r.upload_time}</div>`;
-            resDiv.appendChild(div);
+  // 从云端同步全量数据
+  async function syncFromCloud(showToastMsg = true) {
+    const refreshBtn = document.getElementById('manualRefreshBtn');
+    if (refreshBtn && showToastMsg) {
+      refreshBtn.disabled = true;
+      refreshBtn.innerHTML = `<i class="fas fa-spinner fa-pulse"></i> <span>${t('syncing')}</span>`;
+    }
+    try {
+      const snapshot = await recordsRef.once('value');
+      const data = snapshot.val();
+      const newRecords = [];
+      if (data) {
+        for (const [key, value] of Object.entries(data)) {
+          let rawTime = value.upload_time || new Date().toLocaleString();
+          let formattedTime = formatDateTime(rawTime);
+          newRecords.push({
+            id: key,
+            number: String(value.number || ''),
+            last4: value.last4 || (String(value.number || '').slice(-4)),
+            uploader: value.uploader || '未知',
+            upload_time: formattedTime
           });
         }
-      } catch (e) {
-        document.getElementById('searchLoader').style.display = 'none';
-        alert("查询失败");
+      }
+      await updateLocalData(newRecords);
+      if (showToastMsg && refreshBtn) {
+        refreshBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span>${t('syncSuccess')}</span>`;
+        setTimeout(() => {
+          if (refreshBtn) {
+            refreshBtn.innerHTML = `<i class="fas fa-sync-alt"></i> <span>${t('refreshBtn')}</span>`;
+            refreshBtn.disabled = false;
+          }
+        }, 1800);
+      }
+    } catch (err) {
+      console.error("同步失败", err);
+      if (showToastMsg && refreshBtn) {
+        refreshBtn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <span>${t('syncError') || '同步失败'}</span>`;
+        setTimeout(() => {
+          if (refreshBtn) {
+            refreshBtn.innerHTML = `<i class="fas fa-sync-alt"></i> <span>${t('refreshBtn')}</span>`;
+            refreshBtn.disabled = false;
+          }
+        }, 1500);
       }
     }
+  }
 
-    document.getElementById('exportExcelBtn').addEventListener('click', async function() {
-      const snap = await recordsRef.once('value');
-      const data = snap.val();
-      if (!data) return;
-      let csv = "\uFEFF单号,地点,时间\n";
-      Object.values(data).reverse().forEach(r => { csv += `${r.number},${r.uploader},${r.upload_time}\n`; });
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `快递_${new Date().toLocaleDateString()}.csv`;
-      a.click();
+  async function manualRefresh() {
+    await syncFromCloud(true);
+  }
+
+  function updateTotalCountUI() {
+    const countSpan = document.getElementById('totalCount');
+    if (countSpan) countSpan.innerText = memoryRecords.length;
+  }
+
+  async function initOfflineStorage() {
+    try {
+      const localRecords = await loadAllRecordsFromIndexedDB();
+      if (localRecords && localRecords.length > 0) {
+        memoryRecords = localRecords;
+        memoryRecords.sort((a,b) => new Date(b.upload_time) - new Date(a.upload_time));
+        isDataReady = true;
+        updateTotalCountUI();
+      } else {
+        await syncFromCloud(false);
+      }
+    } catch (err) {
+      console.error("IndexedDB 读取失败，回退云端拉取", err);
+      await syncFromCloud(false);
+    }
+  }
+
+  // =====================  高亮辅助函数（仅高亮匹配的关键词） =====================
+  // 转义正则特殊字符
+  function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  // 对文本进行关键词高亮，返回带 HTML 标签的字符串 (关键词不区分大小写，保留原始文本大小写)
+  function highlightKeyword(text, keyword) {
+    if (!keyword || keyword.trim() === '') return escapeHtml(text);
+    const escapedKeyword = escapeRegex(keyword);
+    const regex = new RegExp(`(${escapedKeyword})`, 'gi');
+    // 先转义HTML特殊字符，再对匹配的部分包裹高亮标签
+    return escapeHtml(text).replace(regex, `<span class="keyword-highlight">$1</span>`);
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
     });
+  }
 
-    function saveSearchHistory(key) {
-      let history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
-      history = [key, ...history.filter(i => i !== key)].slice(0, 5);
-      localStorage.setItem('searchHistory', JSON.stringify(history));
-      displayHistory();
+  // =========================  本地搜索（基于内存缓存，精准高亮匹配词） =========================
+  function performLocalSearch() {
+    const keyword = document.getElementById('searchKey').value.trim();
+    if (keyword.length < 4) {
+      alert(t('minDigits'));
+      return;
     }
-    function displayHistory() {
-      const container = document.getElementById('searchHistory');
-      const history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
-      container.innerHTML = history.map(h => `<span class="search-tag" onclick="fillSearch('${h}')">${h}</span>`).join('');
+    if (!isDataReady && memoryRecords.length === 0) {
+      alert(t('loadingData'));
+      return;
     }
-    window.fillSearch = function(val) { document.getElementById('searchKey').value = val; performSearch(); };
+    saveSearchHistory(keyword);
+    const resultsDiv = document.getElementById('searchResults');
+    resultsDiv.innerHTML = '';
+    const lowerKeyword = keyword.toLowerCase();
+    const matched = memoryRecords.filter(record => 
+      String(record.number).toLowerCase().includes(lowerKeyword)
+    );
+    if (matched.length === 0) {
+      resultsDiv.innerHTML = `<div class="record">${t('noResults')}</div>`;
+      return;
+    }
+    matched.forEach(record => {
+      // 仅对单号中的匹配关键词进行高亮，地点和时间不高亮
+      const highlightedNumber = highlightKeyword(record.number, keyword);
+      const div = document.createElement('div');
+      div.className = 'record';
+      div.innerHTML = `<div><strong>📦 单号：</strong> ${highlightedNumber}</div>
+                       <div><strong>📍 地点：</strong> ${escapeHtml(record.uploader)}</div>
+                       <div><strong>🕒 时间：</strong> ${escapeHtml(record.upload_time)}</div>`;
+      resultsDiv.appendChild(div);
+    });
+  }
 
-    document.querySelectorAll('.nav-link').forEach(l => {
-      l.addEventListener('click', function(e) {
+  // 导出CSV
+  function exportToCSV() {
+    if (memoryRecords.length === 0) {
+      alert("暂无数据可导出");
+      return;
+    }
+    let csv = "\uFEFF单号,地点,时间\n";
+    memoryRecords.forEach(record => {
+      csv += `"${escapeCsv(record.number)}","${escapeCsv(record.uploader)}","${escapeCsv(record.upload_time)}"\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = `快递单号_${new Date().toLocaleDateString()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  function escapeCsv(str) { return String(str).replace(/"/g, '""'); }
+
+  // 上传单号
+  async function handleUpload() {
+    const uploader = document.getElementById('uploader').value.trim();
+    const textarea = document.getElementById('trackingNumbers');
+    const text = textarea.value.trim();
+    if (!uploader) { alert(t('uploaderPlaceholder')); return; }
+    if (!text) { alert(t('trackingNumbersPlaceholder')); return; }
+    const uploadBtn = document.getElementById('uploadBtn');
+    uploadBtn.disabled = true;
+    uploadBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> 上传中...';
+    try {
+      const snapshot = await recordsRef.once('value');
+      const existingMap = new Map();
+      if (snapshot.val()) {
+        Object.values(snapshot.val()).forEach(item => {
+          if (item.number) existingMap.set(String(item.number), true);
+        });
+      }
+      const rawNumbers = text.split('\n').map(s => s.trim()).filter(s => s);
+      const uniqueNumbers = [...new Set(rawNumbers)];
+      const newNumbers = uniqueNumbers.filter(num => !existingMap.has(String(num)));
+      if (newNumbers.length === 0) {
+        alert("所有单号均已存在，无需重复上传");
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = `<span>${t('uploadBtn')}</span> <i class="fas fa-cloud-upload-alt"></i>`;
+        return;
+      }
+      const nowFormatted = getCurrentFormattedTime();
+      const pushPromises = [];
+      for (let num of newNumbers) {
+        const last4 = num.length >= 4 ? num.slice(-4) : num;
+        pushPromises.push(recordsRef.push({ number: num, last4: last4, uploader: uploader, upload_time: nowFormatted }));
+      }
+      await Promise.all(pushPromises);
+      await syncFromCloud(true);
+      alert(`✅ 成功上传 ${newNumbers.length} 个新单号，本地离线库已更新`);
+      textarea.value = '';
+      document.getElementById('uploader').value = '';
+    } catch (err) {
+      console.error(err);
+      alert("上传失败，请检查网络");
+    } finally {
+      uploadBtn.disabled = false;
+      uploadBtn.innerHTML = `<span>${t('uploadBtn')}</span> <i class="fas fa-cloud-upload-alt"></i>`;
+    }
+  }
+
+  // 搜索历史
+  function saveSearchHistory(key) {
+    let history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+    history = [key, ...history.filter(i => i !== key)].slice(0, 5);
+    localStorage.setItem('searchHistory', JSON.stringify(history));
+    displayHistory();
+  }
+  function displayHistory() {
+    const container = document.getElementById('searchHistory');
+    if (!container) return;
+    const history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+    container.innerHTML = history.map(h => `<span class="search-tag" onclick="fillSearch('${escapeHtml(h).replace(/'/g, "\\'")}')">🔍 ${escapeHtml(h)}</span>`).join('');
+  }
+  window.fillSearch = function(val) {
+    document.getElementById('searchKey').value = val;
+    performLocalSearch();
+  };
+
+  // =========================  多语言 =========================
+  const translations = {
+    cn: { 
+      totalCount: "已存单号", uploadNav: "上传", searchNav: "查询", uploadTitle: "单号上传", 
+      uploadLocation: "地点", uploaderPlaceholder: "输入地点", trackingNumbers: "快递单号", 
+      trackingNumbersPlaceholder: "每行一个单号", uploadBtn: "上传", searchTitle: "单号查询", 
+      searchLabel: "输入单号 (全号或后4位)", searchPlaceholder: "输入单号进行查询", searchBtn: "搜索", 
+      noResults: "📭 未找到相关单号", saveSuccess: "✅ 上传成功，已同步云端", 
+      exportBtn: "导出 Excel", minDigits: "⚠️ 最少输入4位字符进行查询", 
+      loadingData: "数据加载中...", refreshBtn: "手动刷新", 
+      syncing: "同步中...", syncSuccess: "同步成功", syncError: "同步失败"
+    },
+    mm: { 
+      totalCount: "ကုဒ်နံပါတ်များ", uploadNav: "တင်ရန်", searchNav: "ရှာရန်", uploadTitle: "ကုဒ် ထဲရန်", 
+      uploadLocation: "နေရာ", uploaderPlaceholder: "နေရာ ထည့်ပါ", trackingNumbers: "ကုဒ်များ", 
+      trackingNumbersPlaceholder: "တစ်ကြောင်းတစ်ခု", uploadBtn: "တင်မည်", searchTitle: "ကုဒ် ရှာရန်", 
+      searchLabel: "နံပါတ် (သို့) နောက်ဆုံး ၄ လုံး", searchPlaceholder: "ရှာဖွေရန် ထည့်ပါ", searchBtn: "ရှာဖွေရန်", 
+      noResults: "မရှိပါ", saveSuccess: "အောင်မြင်ပါပြီ", exportBtn: "Excel ထုတ်ရန်", 
+      minDigits: "အနည်းဆုံး ၄ လုံး ထည့်ပါ", loadingData: "ဒေတာဒေါင်းလုဒ်လုပ်နေသည်...", 
+      refreshBtn: "လက်လုပ်စင်", syncing: "ဒေတာထပ်တူပြုနေသည်...", syncSuccess: "ထပ်တူပြုခြင်းအောင်မြင်", syncError: "ထပ်တူပြုခြင်းမအောင်မြင်"
+    }
+  };
+  let currentLang = localStorage.getItem('preferredLanguage') || 'cn';
+  function t(key) { return translations[currentLang][key] || key; }
+
+  function translatePage() {
+    document.querySelectorAll('[data-translate]').forEach(el => {
+      const key = el.getAttribute('data-translate');
+      if (key && translations[currentLang][key]) el.textContent = translations[currentLang][key];
+    });
+    document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-translate-placeholder');
+      if (key && translations[currentLang][key]) el.placeholder = translations[currentLang][key];
+    });
+    const refreshSpan = document.querySelector('#manualRefreshBtn span');
+    if (refreshSpan) refreshSpan.textContent = t('refreshBtn');
+  }
+
+  function initNav() {
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', (e) => {
         e.preventDefault();
-        document.querySelectorAll('.nav-link, .page-container').forEach(el => el.classList.remove('active'));
-        this.classList.add('active');
-        document.getElementById(this.dataset.page).classList.add('active');
+        const pageId = link.getAttribute('data-page');
+        if (!pageId) return;
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+        document.querySelectorAll('.page-container').forEach(container => container.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
       });
     });
+  }
 
+  function initLang() {
     document.querySelectorAll('.lang-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        currentLang = this.dataset.lang;
+      btn.addEventListener('click', () => {
+        currentLang = btn.getAttribute('data-lang');
         localStorage.setItem('preferredLanguage', currentLang);
         translatePage();
       });
     });
+  }
 
+  function bindEvents() {
+    document.getElementById('uploadBtn').addEventListener('click', handleUpload);
+    document.getElementById('searchBtn').addEventListener('click', performLocalSearch);
+    document.getElementById('exportExcelBtn').addEventListener('click', exportToCSV);
+    document.getElementById('manualRefreshBtn').addEventListener('click', manualRefresh);
+    const searchInput = document.getElementById('searchKey');
+    if (searchInput) searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') performLocalSearch(); });
+  }
+
+  async function start() {
+    initNav();
+    initLang();
+    bindEvents();
     translatePage();
     displayHistory();
-  </script>
+    await initOfflineStorage();
+  }
+  start();
+</script>
 </body>
 </html>
