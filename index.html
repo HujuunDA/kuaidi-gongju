@@ -20,7 +20,7 @@
     .page { background: white; border-radius: 20px; padding: 30px; margin-bottom: 40px; box-shadow: var(--shadow); }
     h2 { font-size: 1.8rem; margin-bottom: 25px; color: var(--primary); text-align: center; position: relative; padding-bottom: 15px; }
     h2:after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 80px; height: 4px; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 2px; }
-    .form-group { margin-bottom: 25px; }
+    .form-group { margin-bottom: 25px; position: relative; }
     label { display: block; margin-bottom: 10px; font-weight: 500; color: var(--primary-dark); }
     input, textarea { width: 100%; padding: 15px; border: 2px solid #e8eaf6; border-radius: 12px; font-size: 1rem; background: #f8fafc; outline: none; transition: border 0.3s; }
     input:focus { border-color: var(--primary); }
@@ -51,12 +51,41 @@
       box-shadow: 0 1px 2px rgba(0,0,0,0.1);
       letter-spacing: 0.3px;
     }
+    /* 清空按钮样式 */
+    .clear-input-btn {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0,0,0,0.2);
+      border: none;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      font-size: 14px;
+      line-height: 1;
+      color: #666;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      z-index: 2;
+    }
+    .clear-input-btn:hover {
+      background: rgba(0,0,0,0.4);
+      color: #222;
+    }
+    /* 有内容时才显示按钮，通过 js 动态控制可见性，但默认显示也无妨，不影响体验 */
+    .search-input-wrapper {
+      position: relative;
+    }
   </style>
 </head>
 <body>
 <div class="container">
   <div class="status-indicator">
-    <!-- 已移除总单号显示区块，完全符合需求 -->
+    <!-- 已移除总单号显示区块 -->
     <div class="status-item">
       <button id="manualRefreshBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> <span data-translate="refreshBtn">手动刷新</span></button>
     </div>
@@ -95,8 +124,10 @@
       <h2><span data-translate="searchTitle">单号查询</span> <i class="fas fa-search-location"></i></h2>
       <div class="form-group">
         <label><span data-translate="searchLabel">输入单号 (全号或后4位)</span>：</label>
-        <!-- 添加 inputmode="numeric" 以在移动端调出数字键盘，同时保留文本输入能力 -->
-        <input type="text" id="searchKey" inputmode="numeric" data-translate-placeholder="searchPlaceholder" placeholder="请输入至少4位数字/字母" />
+        <div class="search-input-wrapper">
+          <input type="text" id="searchKey" inputmode="numeric" data-translate-placeholder="searchPlaceholder" placeholder="请输入至少4位数字/字母" />
+          <button type="button" id="clearSearchBtn" class="clear-input-btn" aria-label="清空输入框">✕</button>
+        </div>
       </div>
       <button id="searchBtn" class="btn"><span data-translate="searchBtn">搜索</span> <i class="fas fa-arrow-right"></i></button>
       <div id="searchHistory" style="margin-top: 15px;"></div>
@@ -444,6 +475,17 @@
     performLocalSearch();
   };
 
+  // 清空输入框函数
+  function clearSearchInput() {
+    const inputEl = document.getElementById('searchKey');
+    if (inputEl) {
+      inputEl.value = '';
+      inputEl.focus();
+      // 可选：同时清空搜索结果区域（让用户决定是否重新搜索，但一键清空通常只清内容不自动搜索）
+      // 为了更好的体验，不清空搜索结果，只清输入框。
+    }
+  }
+
   // =========================  多语言（已按要求精准修改） =========================
   const translations = {
     cn: { 
@@ -517,6 +559,8 @@
     document.getElementById('searchBtn').addEventListener('click', performLocalSearch);
     document.getElementById('exportExcelBtn').addEventListener('click', exportToCSV);
     document.getElementById('manualRefreshBtn').addEventListener('click', manualRefresh);
+    const clearBtn = document.getElementById('clearSearchBtn');
+    if (clearBtn) clearBtn.addEventListener('click', clearSearchInput);
     const searchInput = document.getElementById('searchKey');
     if (searchInput) searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') performLocalSearch(); });
   }
