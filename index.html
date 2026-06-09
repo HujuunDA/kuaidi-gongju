@@ -39,7 +39,6 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .refresh-btn { background: var(--primary-light); border: none; border-radius: 20px; padding: 4px 12px; color: white; cursor: pointer; font-size: 0.8rem; transition: 0.2s; }
     .refresh-btn:hover { background: var(--primary-dark); }
-    /* 关键词高亮样式 - 只高亮匹配的部分，类似标签效果 */
     .keyword-highlight {
       background: #ff9800;
       color: white;
@@ -51,7 +50,6 @@
       box-shadow: 0 1px 2px rgba(0,0,0,0.1);
       letter-spacing: 0.3px;
     }
-    /* 清空按钮样式 */
     .clear-input-btn {
       position: absolute;
       right: 15px;
@@ -76,7 +74,6 @@
       background: rgba(0,0,0,0.4);
       color: #222;
     }
-    /* 有内容时才显示按钮，通过 js 动态控制可见性，但默认显示也无妨，不影响体验 */
     .search-input-wrapper {
       position: relative;
     }
@@ -85,7 +82,6 @@
 <body>
 <div class="container">
   <div class="status-indicator">
-    <!-- 已移除总单号显示区块 -->
     <div class="status-item">
       <button id="manualRefreshBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> <span data-translate="refreshBtn">手动刷新</span></button>
     </div>
@@ -140,7 +136,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 
 <script>
-  // -----------------------------  Firebase 配置 ---------------------------------
   const firebaseConfig = {
     apiKey: "AIzaSyAlPdadUk-zBlBLMJFL-UYDEq8xYUKzfD4",
     authDomain: "antkuaidi.firebaseapp.com",
@@ -154,11 +149,10 @@
   const db = firebase.database();
   const recordsRef = db.ref('tracking_records');
 
-  // =========================  IndexedDB 封装（离线存储核心） =========================
+  // IndexedDB
   const DB_NAME = 'trackingDB';
   const STORE_NAME = 'tracking_records';
   const DB_VERSION = 1;
-
   let dbInstance = null;
 
   function openIndexedDB() {
@@ -182,6 +176,7 @@
     });
   }
 
+  // 全量保存（覆盖）
   async function saveAllRecordsToIndexedDB(records) {
     const db = await openIndexedDB();
     const transaction = db.transaction([STORE_NAME], 'readwrite');
@@ -196,7 +191,21 @@
     });
   }
 
-  // 加载本地缓存 (仅用于极端降级，但本次自动同步优先，保留用于后备)
+  // 增量保存（合并）
+  async function mergeRecordsToIndexedDB(newRecords) {
+    if (!newRecords.length) return;
+    const db = await openIndexedDB();
+    const transaction = db.transaction([STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    for (const record of newRecords) {
+      store.put(record);
+    }
+    return new Promise((resolve, reject) => {
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+  }
+
   async function loadAllRecordsFromIndexedDB() {
     const db = await openIndexedDB();
     const transaction = db.transaction([STORE_NAME], 'readonly');
@@ -208,11 +217,10 @@
     });
   }
 
-  // =========================  全局内存缓存 =========================
   let memoryRecords = [];
   let isDataReady = false;
+  let isSyncing = false;  // 防止并发同步
 
-  // 格式化时间：YYYY-MM-DD HH:MM:SS (年-月-日 时:分:秒)
   function formatDateTime(dateInput) {
     let d;
     if (dateInput instanceof Date) d = dateInput;
@@ -235,53 +243,127 @@
     memoryRecords = [...recordsArray];
     memoryRecords.sort((a,b) => new Date(b.upload_time) - new Date(a.upload_time));
     await saveAllRecordsToIndexedDB(memoryRecords);
-    updateTotalCountUI();  // 由于UI已移除计数显示，函数内部做了安全判断，不会报错
     isDataReady = true;
   }
 
-  // 安全更新（因UI已无总单号元素，但仍保留逻辑以防意外）
-  function updateTotalCountUI() {
-    const countSpan = document.getElementById('totalCount');
-    if (countSpan) countSpan.innerText = memoryRecords.length;
+  // 增量合并内存数据
+  async function mergeLocalData(newRecords) {
+    if (!newRecords.length) return;
+    const existingMap = new Map(memoryRecords.map(r => [r.id, r]));
+    for (const rec of newRecords) {
+      existingMap.set(rec.id, rec);
+    }
+    memoryRecords = Array.from(existingMap.values());
+    memoryRecords.sort((a,b) => new Date(b.upload_time) - new Date(a.upload_time));
+    await mergeRecordsToIndexedDB(newRecords);
+    isDataReady = true;
   }
 
-  // 从云端同步全量数据（每次打开强制同步，确保最新）
-  async function syncFromCloud(showToastMsg = true) {
+  // 计算本地最大upload_time (用于增量查询)
+  function getLocalMaxUploadTime() {
+    if (!memoryRecords.length) return null;
+    let maxTime = memoryRecords[0].upload_time;
+    for (let i = 1; i < memoryRecords.length; i++) {
+      if (memoryRecords[i].upload_time > maxTime) maxTime = memoryRecords[i].upload_time;
+    }
+    return maxTime;
+  }
+
+  // 核心同步函数：forceFullSync=true 全量；false 增量
+  async function syncFromCloud(showToastMsg = true, forceFullSync = false) {
+    if (isSyncing) {
+      if (showToastMsg) console.log("同步进行中，稍后再试");
+      return;
+    }
+    isSyncing = true;
     const refreshBtn = document.getElementById('manualRefreshBtn');
     if (refreshBtn && showToastMsg) {
       refreshBtn.disabled = true;
       refreshBtn.innerHTML = `<i class="fas fa-spinner fa-pulse"></i> <span>${t('syncing')}</span>`;
     }
     try {
-      const snapshot = await recordsRef.once('value');
-      const data = snapshot.val();
-      const newRecords = [];
-      if (data) {
-        for (const [key, value] of Object.entries(data)) {
-          let rawTime = value.upload_time || new Date().toLocaleString();
-          let formattedTime = formatDateTime(rawTime);
-          newRecords.push({
-            id: key,
-            number: String(value.number || ''),
-            last4: value.last4 || (String(value.number || '').slice(-4)),
-            uploader: value.uploader || '未知',
-            upload_time: formattedTime
-          });
-        }
-      }
-      await updateLocalData(newRecords);
-      if (showToastMsg && refreshBtn) {
-        refreshBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span>${t('syncSuccess')}</span>`;
-        setTimeout(() => {
-          if (refreshBtn) {
-            refreshBtn.innerHTML = `<i class="fas fa-sync-alt"></i> <span>${t('refreshBtn')}</span>`;
-            refreshBtn.disabled = false;
+      if (forceFullSync) {
+        // 全量拉取
+        const snapshot = await recordsRef.once('value');
+        const data = snapshot.val();
+        const newRecords = [];
+        if (data) {
+          for (const [key, value] of Object.entries(data)) {
+            let rawTime = value.upload_time || new Date().toLocaleString();
+            let formattedTime = formatDateTime(rawTime);
+            newRecords.push({
+              id: key,
+              number: String(value.number || ''),
+              last4: value.last4 || (String(value.number || '').slice(-4)),
+              uploader: value.uploader || '未知',
+              upload_time: formattedTime
+            });
           }
-        }, 1800);
+        }
+        await updateLocalData(newRecords);
+        if (showToastMsg && refreshBtn) {
+          refreshBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span>${t('syncSuccess')}</span>`;
+          setTimeout(() => {
+            if (refreshBtn) {
+              refreshBtn.innerHTML = `<i class="fas fa-sync-alt"></i> <span>${t('refreshBtn')}</span>`;
+              refreshBtn.disabled = false;
+            }
+          }, 1800);
+        }
+      } else {
+        // 增量同步：只拉取 upload_time > 本地最大时间 的记录
+        let lastSyncTime = getLocalMaxUploadTime();
+        if (!lastSyncTime) {
+          // 没有本地记录 → 自动转为全量
+          await syncFromCloud(showToastMsg, true);
+          return;
+        }
+        // 查询 upload_time > lastSyncTime 的记录
+        const query = recordsRef.orderByChild('upload_time').startAt(lastSyncTime);
+        const snapshot = await query.once('value');
+        const data = snapshot.val();
+        const incrementalRecords = [];
+        if (data) {
+          for (const [key, value] of Object.entries(data)) {
+            let rawTime = value.upload_time || new Date().toLocaleString();
+            let formattedTime = formatDateTime(rawTime);
+            // 如果时间等于 lastSyncTime 且 id 已经存在，则跳过（去重）
+            if (formattedTime === lastSyncTime && memoryRecords.some(r => r.id === key)) continue;
+            incrementalRecords.push({
+              id: key,
+              number: String(value.number || ''),
+              last4: value.last4 || (String(value.number || '').slice(-4)),
+              uploader: value.uploader || '未知',
+              upload_time: formattedTime
+            });
+          }
+        }
+        if (incrementalRecords.length) {
+          await mergeLocalData(incrementalRecords);
+          if (showToastMsg && refreshBtn) {
+            refreshBtn.innerHTML = `<i class="fas fa-cloud-download-alt"></i> <span>${t('syncIncremental') || '已更新'}</span>`;
+            setTimeout(() => {
+              if (refreshBtn) {
+                refreshBtn.innerHTML = `<i class="fas fa-sync-alt"></i> <span>${t('refreshBtn')}</span>`;
+                refreshBtn.disabled = false;
+              }
+            }, 1500);
+          }
+        } else {
+          if (showToastMsg && refreshBtn) {
+            refreshBtn.innerHTML = `<i class="fas fa-check"></i> <span>${t('syncNoChange') || '已是最新'}</span>`;
+            setTimeout(() => {
+              if (refreshBtn) {
+                refreshBtn.innerHTML = `<i class="fas fa-sync-alt"></i> <span>${t('refreshBtn')}</span>`;
+                refreshBtn.disabled = false;
+              }
+            }, 1200);
+          }
+        }
       }
     } catch (err) {
       console.error("同步失败", err);
-      // 同步失败时，尝试从本地IndexedDB加载作为降级，保证离线可用
+      // 降级: 尝试从本地加载
       try {
         const localFallback = await loadAllRecordsFromIndexedDB();
         if (localFallback && localFallback.length > 0) {
@@ -311,7 +393,7 @@
           }
         }
       } catch (fallbackErr) {
-        console.error("本地降级加载失败", fallbackErr);
+        console.error(fallbackErr);
         memoryRecords = [];
         isDataReady = true;
         if (showToastMsg && refreshBtn) {
@@ -324,19 +406,20 @@
           }, 1500);
         }
       }
+    } finally {
+      isSyncing = false;
     }
   }
 
   async function manualRefresh() {
-    await syncFromCloud(true);
+    await syncFromCloud(true, true);  // 强制全量
   }
 
-  // =====================  高亮辅助函数（仅高亮匹配的关键词） =====================
+  // 其余辅助函数
   function escapeRegex(str) {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
-  // 对文本进行关键词高亮，返回带 HTML 标签的字符串 (关键词不区分大小写，保留原始文本大小写)
   function highlightKeyword(text, keyword) {
     if (!keyword || keyword.trim() === '') return escapeHtml(text);
     const escapedKeyword = escapeRegex(keyword);
@@ -354,7 +437,6 @@
     });
   }
 
-  // =========================  本地搜索（基于内存缓存，精准高亮匹配词） =========================
   function performLocalSearch() {
     const keyword = document.getElementById('searchKey').value.trim();
     if (keyword.length < 4) {
@@ -387,7 +469,6 @@
     });
   }
 
-  // 导出CSV
   function exportToCSV() {
     if (memoryRecords.length === 0) {
       alert("暂无数据可导出");
@@ -409,7 +490,6 @@
   }
   function escapeCsv(str) { return String(str).replace(/"/g, '""'); }
 
-  // 上传单号
   async function handleUpload() {
     const uploader = document.getElementById('uploader').value.trim();
     const textarea = document.getElementById('trackingNumbers');
@@ -443,9 +523,9 @@
         pushPromises.push(recordsRef.push({ number: num, last4: last4, uploader: uploader, upload_time: nowFormatted }));
       }
       await Promise.all(pushPromises);
-      // 上传成功后强制同步最新数据（包含刚上传的记录）
-      await syncFromCloud(true);
-      alert(`✅ 成功上传 ${newNumbers.length} 个新单号，数据已同步至云端`);
+      // 上传后强制全量同步确保最新
+      await syncFromCloud(true, true);
+      alert(`✅ 成功上传 ${newNumbers.length} 个新单号`);
       textarea.value = '';
       document.getElementById('uploader').value = '';
     } catch (err) {
@@ -457,7 +537,6 @@
     }
   }
 
-  // 搜索历史
   function saveSearchHistory(key) {
     let history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
     history = [key, ...history.filter(i => i !== key)].slice(0, 5);
@@ -475,18 +554,14 @@
     performLocalSearch();
   };
 
-  // 清空输入框函数
   function clearSearchInput() {
     const inputEl = document.getElementById('searchKey');
     if (inputEl) {
       inputEl.value = '';
       inputEl.focus();
-      // 可选：同时清空搜索结果区域（让用户决定是否重新搜索，但一键清空通常只清内容不自动搜索）
-      // 为了更好的体验，不清空搜索结果，只清输入框。
     }
   }
 
-  // =========================  多语言（已按要求精准修改） =========================
   const translations = {
     cn: { 
       totalCount: "已存单号", uploadNav: "上传", searchNav: "查询", uploadTitle: "单号上传", 
@@ -497,7 +572,7 @@
       exportBtn: "导出", minDigits: "⚠️ 最少输入4位字符进行查询", 
       loadingData: "数据加载中...", refreshBtn: "手动刷新", 
       syncing: "同步中...", syncSuccess: "同步成功", syncError: "同步失败",
-      offlineMode: ""   // 按要求不显示任何文字
+      offlineMode: "", syncIncremental: "增量更新完成", syncNoChange: "已是最新"
     },
     mm: { 
       totalCount: "ကုဒ်နံပါတ်များ", uploadNav: "တင်ရန်", searchNav: "ရှာရန်", uploadTitle: "ကုဒ် ထဲရန်", 
@@ -505,13 +580,9 @@
       trackingNumbersPlaceholder: "တစ်ကြောင်းတစ်ခု", uploadBtn: "တင်မည်", searchTitle: "ကုဒ် ရှာရန်", 
       searchLabel: "နံပါတ် (သို့) နောက်ဆုံး ၄ လုံး", searchPlaceholder: "ရှာဖွေရန် ထည့်ပါ", searchBtn: "ရှာဖွေရန်", 
       noResults: "မရှိပါ", saveSuccess: "အောင်မြင်ပါပြီ", 
-      exportBtn: "Excel",  // 缅文只显示 Excel
-      minDigits: "အနည်းဆုံး ၄ လုံး ထည့်ပါ", loadingData: "ဒေတာဒေါင်းလုဒ်လုပ်နေသည်...", 
-      refreshBtn: "Update",  // 原 "လက်လုပ်စင်" 改为 Update
-      syncing: "Updateလုပ်နေသည်...",   // 原 "ဒေတာထပ်တူပြုနေသည်..." 按要求修改
-      syncSuccess: "အောင်မြင်သည်",    // 原 "ထပ်တူပြုခြင်းအောင်မြင်" 改为新词
-      syncError: "မအောင်မြင်ပါ",      // 原 "ထပ်တူပြုခြင်းမအောင်မြင်" 改为新词
-      offlineMode: ""    // 不用显示任何文字
+      exportBtn: "Excel", minDigits: "အနည်းဆုံး ၄ လုံး ထည့်ပါ", loadingData: "ဒေတာဒေါင်းလုဒ်လုပ်နေသည်...", 
+      refreshBtn: "Update", syncing: "Updateလုပ်နေသည်...", syncSuccess: "အောင်မြင်သည်", syncError: "မအောင်မြင်ပါ",
+      offlineMode: "", syncIncremental: "ဒေတာအသစ်ထည့်ပြီး", syncNoChange: "နောက်ဆုံးထိ"
     }
   };
   let currentLang = localStorage.getItem('preferredLanguage') || 'cn';
@@ -559,22 +630,29 @@
     document.getElementById('searchBtn').addEventListener('click', performLocalSearch);
     document.getElementById('exportExcelBtn').addEventListener('click', exportToCSV);
     document.getElementById('manualRefreshBtn').addEventListener('click', manualRefresh);
-    const clearBtn = document.getElementById('clearSearchBtn');
-    if (clearBtn) clearBtn.addEventListener('click', clearSearchInput);
+    document.getElementById('clearSearchBtn').addEventListener('click', clearSearchInput);
     const searchInput = document.getElementById('searchKey');
     if (searchInput) searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') performLocalSearch(); });
   }
 
-  // 启动核心：每次打开强制自动从云端同步最新数据，保证最先展示最新数据
   async function start() {
     initNav();
     initLang();
     bindEvents();
     translatePage();
     displayHistory();
-    // 强制每次打开程序都自动同步云端最新数据（满足需求）
-    await syncFromCloud(true);
-    console.log("首次自动同步完成，当前单号数量:", memoryRecords.length);
+    // 首次启动：先尝试从本地加载，若无数据则全量，否则增量同步
+    const localRecords = await loadAllRecordsFromIndexedDB();
+    if (localRecords && localRecords.length > 0) {
+      memoryRecords = localRecords;
+      memoryRecords.sort((a,b) => new Date(b.upload_time) - new Date(a.upload_time));
+      isDataReady = true;
+      // 有本地数据，执行增量同步
+      await syncFromCloud(true, false);
+    } else {
+      // 无本地数据，强制全量同步
+      await syncFromCloud(true, true);
+    }
   }
   start();
 </script>
